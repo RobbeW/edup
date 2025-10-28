@@ -262,14 +262,14 @@
             <div class="row">
               <label class="check"><input id="subjectHobby" type="checkbox"> Hobby?</label>
             </div>
-            <button class="btn" type="submit">Vak toevoegen</button>
+            <button class="btn" type="submit">Item toevoegen</button>
           </form>
         </aside>
 
         <section class="grid-wrap">
           <div class="grid-head">
             <h2>Weekrooster</h2>
-            <div class="legend" id="legend"></div>
+            <div class="legend" id="legend" style="display:none"></div>
           </div>
           <div id="weekGrid" class="week-grid" aria-label="Weekrooster (ma-zo)"></div>
           <p class="subtle">Tip: plan afwisselend (interleaving) en geef jezelf tijd ertussen (spaced practice).</p>
@@ -544,7 +544,7 @@
     // Brand & constants
     // ===========================
     const BRAND = { name: "edUP!", primary: "#1A224C", secondary: "#5CC2AB" };
-    const PX_PER_MIN = 1.0; // iets groter voor leesbaarheid
+    const PX_PER_MIN = 2; // iets groter voor leesbaarheid
 
     // Rooster-venster (07:00 → 24:00)
     const START_HOUR = 7;
@@ -1665,5 +1665,6 @@
   </script>
 </body>
 </html>
+
 
 
