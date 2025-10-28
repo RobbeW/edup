@@ -829,195 +829,207 @@
       return perSubject;
     }
 
-    function renderWeekGrid() {
-      weekGrid.innerHTML = "";
+    // Compute per-hour px/min based on max overlaps in that hour across all days
+function computeHourPxPerMin(blocks) {
+  const hourScale = {};
+  for (let h = START_HOUR; h < END_HOUR; h++) hourScale[h] = SCALE_EMPTY;
 
-      // Header rij
-      const head = document.createElement('div');
-      head.className = 'row header';
-      const hoursHeader = document.createElement('div');
-      hoursHeader.className = 'hours-col';
-      hoursHeader.innerHTML = "<div></div>"; // lege hoek
-      head.appendChild(hoursHeader);
-      const dayNames = ["Zondag","Maandag","Dinsdag","Woensdag","Donderdag","Vrijdag","Zaterdag"];
-      const dayOrder = [1,2,3,4,5,6,0];
-      dayOrder.forEach(d => {
-        const c = document.createElement('div');
-        c.className = 'day-col head';
-        c.textContent = dayNames[d];
-        head.appendChild(c);
-      });
-      weekGrid.appendChild(head);
+  const days = [1,2,3,4,5,6,0];
+  for (let h = START_HOUR; h < END_HOUR; h++) {
+    const hourStart = h * 60;
+    const hourEnd   = (h + 1) * 60;
+    let maxOverlap = 0;
 
-      // Body met urenrail + dagkolommen
-      const body = document.createElement('div');
-      body.className = 'body';
-
-      const blocks = getBlocks();
-
-      // ——— Dynamische uurhoogtes (uniform per uur over alle dagen):
-      // 19:00 verdubbelen als er ≥1 blok in dat uur; verdrievoudigen als ≥2 blokken in dat uur.
-      const hourHeights = {};
-      for (let h = START_HOUR; h < END_HOUR; h++) {
-        const countInHour = blocks.filter(b => Math.floor(b.startMin/60) === h).length;
-        let scale = 1;
-        if (h >= 19) {
-          if (countInHour >= 2) scale = 3;
-          else if (countInHour >= 1) scale = 2;
-          else scale = 1; // geen blok → normaal
-        }
-        hourHeights[h] = 60 * PX_PER_MIN * scale;
+    for (const day of days) {
+      let count = 0;
+      for (const b of blocks) {
+        if (b.day !== day) continue;
+        const bStart = b.startMin;
+        const bEnd   = b.startMin + b.duration;
+        // intersects hour?
+        if (bStart < hourEnd && bEnd > hourStart) count++;
       }
-      const cumTop = {};
-      let totalHeight = 0;
-      for (let h = START_HOUR; h < END_HOUR; h++) {
-        cumTop[h] = totalHeight;
-        totalHeight += hourHeights[h];
-      }
-      // Helpers: tijd → y en y → tijd (binnen ons venster)
-      function timeToY(min) {
-        let m = Math.max(START_MIN, Math.min(END_MIN, min));
-        let y = 0;
-        for (let h = START_HOUR; h < END_HOUR; h++) {
-          const hourStart = h * 60, hourEnd = (h+1)*60;
-          const hh = hourHeights[h];
-          if (m >= hourEnd) { y += hh; continue; }
-          if (m <= hourStart) { break; }
-          const frac = (m - hourStart) / 60;
-          y += hh * frac;
-          break;
-        }
-        return y;
-      }
-      function yToMinutes(y) {
-        let acc = 0;
-        for (let h = START_HOUR; h < END_HOUR; h++) {
-          const hh = hourHeights[h];
-          if (y > acc + hh) { acc += hh; continue; }
-          const frac = Math.max(0, Math.min(1, (y - acc) / hh));
-          return h*60 + Math.round(frac * 60);
-        }
-        return END_MIN;
-      }
-
-      // Urenrail (links)
-      const hr = document.createElement('div');
-      hr.className = 'hours-col';
-      hr.style.height = totalHeight + 'px';
-      for (let h = START_HOUR; h < END_HOUR; h++) {
-        const mark = document.createElement('div');
-        mark.className = 'hour-mark';
-        mark.style.height = hourHeights[h] + 'px';
-        mark.textContent = `${String(h).padStart(2,'0')}:00`;
-        hr.appendChild(mark);
-      }
-      body.appendChild(hr);
-
-      // Dagkolommen
-      dayOrder.forEach(day => {
-        const col = document.createElement('div');
-        col.className = 'day-col';
-        col.style.height = totalHeight + 'px';
-        col.dataset.day = String(day);
-
-        // uurlijnen
-        for (let h = START_HOUR; h <= END_HOUR; h++) {
-          const line = document.createElement('div');
-          line.className = 'hour-line';
-          const top = (h === START_HOUR) ? 0 : cumTop[h-1] + hourHeights[h-1];
-          line.style.top = top + 'px';
-          col.appendChild(line);
-        }
-
-        // blocks van deze dag
-        blocks.filter(b => b.day === day).forEach(b => {
-          const sub = subjects.find(s => s.id === b.subjectId);
-          const bStart = b.startMin;
-          const bEnd   = b.startMin + b.duration;
-          const visStart = Math.max(bStart, START_MIN);
-          const visEnd   = Math.min(bEnd, END_MIN);
-          if (visEnd <= START_MIN || visStart >= END_MIN) return;
-
-          const topPx    = timeToY(visStart);
-          const bottomPx = timeToY(visEnd);
-          const heightPx = Math.max(14, bottomPx - topPx); // min hoogte voor klikbaarheid
-          const truncatedTop = bStart < START_MIN;
-          const truncatedBot = bEnd   > END_MIN;
-
-          const block = document.createElement('button');
-          block.type = "button";
-          block.className = 'study-block';
-          block.style.top = topPx + 'px';
-          block.style.height = heightPx + 'px';
-          block.style.background = sub ? sub.color : BRAND.secondary;
-          block.title = `${sub?sub.name:'Vak'} — ${minutesToHHMM(b.startMin)} (${b.duration} min)` +
-                        (truncatedTop ? " • (Begint vóór 07:00)" : "") +
-                        (truncatedBot ? " • (Eindigt na 24:00)" : "");
-
-          if (sub && sub.hobby) {
-            block.innerHTML = `
-              <span class="sb-time">${minutesToHHMM(b.startMin)} • ${b.duration}m</span>
-              <span class="sb-name">${sub.name}</span>
-            `;
-          } else {
-            block.innerHTML = `
-              <span class="sb-time">
-                ${minutesToHHMM(b.startMin)} • ${b.duration}m
-                ${truncatedTop ? '↥' : ''}${truncatedBot ? '↧' : ''}
-              </span>
-              <span class="sb-name">${sub?sub.name:'Vak'}</span>
-              ${b.title ? `<span class="sb-title">${b.title}</span>` : ''}
-              ${b.technique ? `<span class="sb-tech">${b.technique}</span>` : ''}
-              ${b.desc ? `<span class="sb-desc">${b.desc}</span>` : ''}
-              ${b.note ? `<span class="sb-note">${b.note}</span>` : ''}
-            `;
-          }
-
-          // Done checkbox in planner
-          const cb = document.createElement('input');
-          cb.type = 'checkbox';
-          cb.className = 'done-toggle';
-          cb.title = 'Markeer als afgewerkt';
-          cb.checked = !!b.tested;
-          if (cb.checked) block.classList.add('done');
-          cb.addEventListener('change', () => {
-            b.tested = cb.checked;
-            if (b.tested) block.classList.add('done'); else block.classList.remove('done');
-            const all = getBlocks();
-            const idx = all.findIndex(x => x.id === b.id);
-            if (idx >= 0) { all[idx] = b; setBlocks(all); }
-          });
-          block.appendChild(cb);
-
-          // Klikken op blok = editen
-          block.addEventListener('click', (ev) => {
-            if (ev.target === cb) return; // toggle handled
-            editBlock(b.id);
-          });
-
-          col.appendChild(block);
-        });
-
-        // Klikken in lege ruimte: nieuw blok plannen (snappen op 5 min)
-        col.addEventListener('click', (e) => {
-          if (e.target.closest('.study-block')) return;
-          const rect = col.getBoundingClientRect();
-          const y = e.clientY - rect.top;
-          let minutes = yToMinutes(y);
-          minutes = Math.max(START_MIN, Math.min(END_MIN-5, minutes));
-          const snapped = Math.round(minutes / 5) * 5;
-          openBlockModal({
-            day,
-            startMin: snapped,
-            duration: 25
-          });
-        });
-
-        body.appendChild(col);
-      });
-
-      weekGrid.appendChild(body);
+      if (count > maxOverlap) maxOverlap = count;
+      if (maxOverlap >= 2) break; // no need to check further
     }
+
+    hourScale[h] = (maxOverlap === 0) ? SCALE_EMPTY
+                    : (maxOverlap === 1 ? SCALE_ONE : SCALE_MULTI);
+  }
+  return hourScale; // { [hour]: pxPerMin }
+}
+
+// Build cumulative metrics for layout
+function buildHourMetrics(hourScale) {
+  const hourHeights  = {}; // px per hour
+  const cumulativeTop = {}; // px from top to start of hour
+  let cum = 0;
+  for (let h = START_HOUR; h < END_HOUR; h++) {
+    cumulativeTop[h] = cum;
+    hourHeights[h]   = hourScale[h] * 60;
+    cum += hourHeights[h];
+  }
+  const totalHeight = cum;
+  return { hourHeights, cumulativeTop, totalHeight };
+}
+
+// Map minutes (0..1440) to Y px (relative to top of grid)
+function makeMinuteToY(cumulativeTop, hourScale) {
+  return function minuteToY(min) {
+    const mm = Math.max(START_MIN, Math.min(END_MIN, min));
+    let h = Math.floor(mm / 60);
+    if (h < START_HOUR) h = START_HOUR;
+    if (h >= END_HOUR)  h = END_HOUR - 1;
+    const withinMin = mm - h * 60;
+    return cumulativeTop[h] + withinMin * hourScale[h];
+  };
+}
+
+// Map Y px (relative to top of grid) to minutes (0..1440)
+function makeYToMinutes(cumulativeTop, hourScale) {
+  return function yToMinutes(y) {
+    let h = START_HOUR;
+    while (h < END_HOUR - 1 && cumulativeTop[h + 1] <= y) h++;
+    const withinPx   = y - cumulativeTop[h];
+    const minsInHour = withinPx / hourScale[h];
+    // clamp to [0, 60]
+    const mins = Math.max(0, Math.min(60, Math.round(minsInHour)));
+    return h * 60 + mins;
+  };
+}
+
+
+    function renderWeekGrid() {
+  weekGrid.innerHTML = "";
+
+  // Header
+  const head = document.createElement('div');
+  head.className = 'row header';
+  const hours = document.createElement('div');
+  hours.className = 'hours-col';
+  hours.innerHTML = "<div></div>";
+  head.appendChild(hours);
+  const dayNames = ["Zondag","Maandag","Dinsdag","Woensdag","Donderdag","Vrijdag","Zaterdag"];
+  [1,2,3,4,5,6,0].forEach(d => {
+    const c = document.createElement('div');
+    c.className = 'day-col head';
+    c.textContent = dayNames[d];
+    head.appendChild(c);
+  });
+  weekGrid.appendChild(head);
+
+  // Body
+  const body = document.createElement('div');
+  body.className = 'body';
+
+  const blocks = getBlocks();
+
+  // NEW: dynamic hour scaling
+  const hourScale = computeHourPxPerMin(blocks); // {hour -> px/min}
+  const { hourHeights, cumulativeTop, totalHeight } = buildHourMetrics(hourScale);
+  const minuteToY  = makeMinuteToY(cumulativeTop, hourScale);
+  const yToMinutes = makeYToMinutes(cumulativeTop, hourScale);
+
+  // Hours rail (left)
+  const hr = document.createElement('div');
+  hr.className = 'hours-col';
+  hr.style.height = totalHeight + 'px';
+  for (let h = START_HOUR; h < END_HOUR; h++) {
+    const mark = document.createElement('div');
+    mark.className = 'hour-mark';
+    mark.style.height = (hourHeights[h]) + 'px';
+    mark.textContent = `${String(h).padStart(2,'0')}:00`;
+    hr.appendChild(mark);
+  }
+  body.appendChild(hr);
+
+  // Per-day columns
+  [1,2,3,4,5,6,0].forEach(day => {
+    const col = document.createElement('div');
+    col.className = 'day-col';
+    col.style.height = totalHeight + 'px';
+    col.dataset.day = String(day);
+
+    // Hour lines at boundaries
+    for (let h = START_HOUR; h < END_HOUR; h++) {
+      const line = document.createElement('div');
+      line.className = 'hour-line';
+      line.style.top = (cumulativeTop[h]) + 'px';
+      col.appendChild(line);
+    }
+
+    // Click-to-plan using dynamic scale
+    col.addEventListener('click', (e) => {
+      if (e.target !== col) return; // ignore clicks on existing blocks
+      const rect = col.getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      const startMin = yToMinutes(y); // 0..1440
+      // Open with a sensible default subject and duration
+      openBlockModal({
+        subjectId: subjects[0]?.id || '',
+        day,
+        startMin,
+        duration: DEFAULT_BLOCK_MIN,
+        title: '', desc: '', technique: '', tested: false, note: ''
+      });
+    });
+
+    // Render blocks for this day
+    blocks.filter(b => b.day === day).forEach(b => {
+      const sub = subjects.find(s => s.id === b.subjectId);
+
+      const bStart = b.startMin;
+      const bEnd   = b.startMin + b.duration;
+      const visStart = Math.max(bStart, START_MIN);
+      const visEnd   = Math.min(bEnd,   END_MIN);
+      if (visEnd <= START_MIN || visStart >= END_MIN) return;
+
+      const topPx    = minuteToY(visStart);
+      const bottomPx = minuteToY(visEnd);
+      const heightPx = Math.max(1, bottomPx - topPx);
+
+      const truncatedTop = bStart < START_MIN;
+      const truncatedBot = bEnd   > END_MIN;
+
+      const block = document.createElement('button');
+      block.type = "button";
+      block.className = 'study-block';
+      block.style.top = topPx + 'px';
+      block.style.height = heightPx + 'px';
+      block.style.background = sub ? sub.color : BRAND.secondary;
+      block.title = `${sub?sub.name:'Vak'} — ${minutesToHHMM(b.startMin)} (${b.duration} min)` +
+                    (truncatedTop ? " • (Begint vóór 07:00)" : "") +
+                    (truncatedBot ? " • (Eindigt na 24:00)" : "");
+
+      if (sub && sub.hobby) {
+        block.innerHTML = `
+          <span class="sb-time">${minutesToHHMM(b.startMin)} • ${b.duration}m</span>
+          <span class="sb-name">${sub.name}</span>
+        `;
+      } else {
+        block.innerHTML = `
+          <span class="sb-time">
+            ${minutesToHHMM(b.startMin)} • ${b.duration}m ${b.tested ? '✓' : ''}
+            ${truncatedTop ? '↥' : ''}${truncatedBot ? '↧' : ''}
+          </span>
+          <span class="sb-name">${sub?sub.name:'Vak'}</span>
+          ${b.title ? `<span class="sb-title">${b.title}</span>` : ''}
+          ${b.technique ? `<span class="sb-tech">${b.technique}</span>` : ''}
+          ${b.desc ? `<span class="sb-desc">${b.desc}</span>` : ''}
+          ${b.note ? `<span class="sb-note">${b.note}</span>` : ''}
+        `;
+      }
+
+      block.addEventListener('click', () => editBlock(b.id));
+      col.appendChild(block);
+    });
+
+    body.appendChild(col);
+  });
+
+  weekGrid.appendChild(body);
+}
+
 
     weekStartInput.addEventListener('change', () => {
       localStorage.setItem(SKEY_WEEK_START, weekStartInput.value);
@@ -1662,9 +1674,17 @@
     renderLegend();
     renderWeekGrid();
     if (seededNow) { renderSubjectsUI(); renderLegend(); fillSubjectSelect(); }
+
+// Dynamisch schalen van de uren bij de planning. 
+const SCALE_EMPTY = 0.5; // px per minute when hour is empty
+const SCALE_ONE   = 3;   // px per minute when hour has 1 block (max across days)
+const SCALE_MULTI = 6;   // px per minute when hour has 2+ blocks
+
+    
   </script>
 </body>
 </html>
+
 
 
 
