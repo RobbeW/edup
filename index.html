@@ -21,8 +21,14 @@
   <!-- Basestyles -->
   <link rel="stylesheet" href="styles.css">
 
-  <!-- Kleine CSS-patches -->
+  <!-- Kleine CSS-patches die de bestaande styles aanvullen/overriden -->
   <style>
+    :root {
+      --brand-primary: #1A224C;
+      --brand-secondary: #5CC2AB;
+    }
+
+    /* ——— Overzichtlijst: wrapping & geen overschot ——— */
     .subjects { display: grid; gap: 8px; }
     .subject-item { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
     .subject-item .dot { width:10px; height:10px; border-radius:999px; flex:0 0 auto; }
@@ -33,15 +39,20 @@
 
     /* ——— Blokkaartjes ——— */
     .study-block {
-      position:absolute; /* belangrijk voor plaatsing */
+      position:absolute; /* vereist voor top/height positionering */
+      left: 4px; right: 4px;
       text-align:left;
-      padding:6px 8px 8px 8px; /* iets meer body */
-      border-radius:8px;
       color:#fff;
-      box-shadow:0 1px 2px rgba(0,0,0,.06);
+      border-radius:10px;
+      padding:6px 28px 6px 8px;
+      box-shadow:0 2px 6px rgba(0,0,0,.15);
     }
-    .study-block .sb-time { display:block; font-weight:700; line-height:1.15; }
-    .study-block .sb-name { display:block; line-height:1.15; }
+    .study-block.done {
+      filter: grayscale(85%) brightness(0.95);
+      opacity: .75;
+    }
+    .study-block .sb-time { display:block; font-weight:700; }
+    .study-block .sb-name { display:block; }
     .study-block .sb-title,
     .study-block .sb-tech,
     .study-block .sb-desc,
@@ -50,28 +61,28 @@
       overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
       opacity:.95;
     }
-    .study-block .sb-tech { font-size:0.85em; opacity:.85; }
-    .study-block .sb-desc { font-size:0.95em; }
-    .study-block .sb-note { font-size:0.85em; opacity:.8; }
+    .study-block .sb-tech { font-size:0.85em; opacity:.9; }
+    .study-block .sb-desc { font-size:0.9em; }
+    .study-block .sb-note { font-size:0.85em; opacity:.85; }
 
-    /* Done-checkbox in blok (niet voor hobby) */
-    .sb-done {
+    /* Done checkbox on blocks */
+    .done-toggle {
       position:absolute;
       top:6px; right:6px;
-      width:16px; height:16px;
-      accent-color:#1A224C;
-      cursor:pointer;
-    }
-    .study-block.done {
-      background:#cfd8dc !important;
-      color:#263238;
+      transform:scale(1.1);
+      accent-color: #fff;
+      filter: drop-shadow(0 0 2px rgba(0,0,0,.35));
+      cursor: pointer;
     }
 
+    /* ——— Omschrijving teller ——— */
     .hint { font-size:.85em; color:#667; }
     .hint.error { color:#b00020; }
+
+    /* ——— Check-row align ——— */
     .check-row .check { display:flex; align-items:center; gap:8px; }
 
-    /* Quadrant */
+    /* ——— Quadrant met grid, assen en dot ——— */
     .quadrant {
       position:relative;
       background:#fff;
@@ -92,22 +103,40 @@
       top:calc(var(--qy, .5) * 100%);
       transform:translate(-50%,-50%);
       width:14px; height:14px; border-radius:50%;
-      border:2px solid #1A224C; background:#5CC2AB;
+      border:2px solid var(--brand-primary); background:var(--brand-secondary);
       box-shadow:0 0 0 2px #fff;
     }
-    .quadrant .axis-label { position:absolute; font-size:.85em; color:#4a5877; pointer-events:none; text-shadow:0 1px 0 #fff; }
+    .quadrant .axis-label {
+      position:absolute; font-size:.85em; color:#4a5877; pointer-events:none;
+      text-shadow:0 1px 0 #fff;
+    }
     .quadrant .axis-label.x { bottom:6px; left:50%; transform:translateX(-50%); }
     .quadrant .axis-label.y { top:50%; left:8px; transform:translateY(-50%) rotate(-90deg); transform-origin:left top; }
 
-    /* Modals */
+    /* ——— Scrollbare modals ——— */
     .modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:grid; place-items:center; padding:16px; }
     .modal[hidden] { display:none; }
-    .modal-box { width:min(680px, 92vw); max-height:90vh; background:#fff; border-radius:14px; box-shadow:0 12px 40px rgba(0,0,0,.2); display:flex; flex-direction:column; overflow:hidden; }
-    .modal-head { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid #e8eef6; background:#fff; position:sticky; top:0; z-index:1; }
-    .modal-body { padding:14px 16px; overflow:auto; -webkit-overflow-scrolling:touch; }
-    .modal-actions { display:flex; gap:8px; justify-content:flex-end; padding:12px 16px; border-top:1px solid #e8eef6; background:#fff; position:sticky; bottom:0; z-index:1; }
+    .modal-box {
+      width:min(720px, 94vw);
+      max-height:90vh;
+      background:#fff; border-radius:14px; box-shadow:0 12px 40px rgba(0,0,0,.2);
+      display:flex; flex-direction:column; overflow:hidden;
+    }
+    .modal-head {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 16px; border-bottom:1px solid #e8eef6; background:#fff; position:sticky; top:0; z-index:1;
+    }
+    .modal-body {
+      padding:14px 16px; overflow:auto; -webkit-overflow-scrolling:touch;
+    }
+    .modal-actions {
+      display:flex; gap:8px; justify-content:flex-end;
+      padding:12px 16px; border-top:1px solid #e8eef6; background:#fff; position:sticky; bottom:0; z-index:1;
+    }
+    .modal-close { font-size:20px; line-height:1; background:transparent; border:none; cursor:pointer; }
     body.modal-open { overflow:hidden; }
 
+    /* Kleine quality-of-life */
     .row { display:grid; gap:6px; margin-bottom:10px; }
     .row.two { grid-template-columns:1fr 1fr; gap:10px; }
     .row input[type="text"], .row input[type="time"], .row input[type="number"], .row input[type="date"], .row select, .row textarea {
@@ -115,17 +144,42 @@
     }
     .btn { cursor:pointer; }
 
+    /* Week-grid hover affordance (click to add) */
+    .day-col { position:relative; }
+    .day-col::after {
+      content: "+";
+      position:absolute; inset:0;
+      opacity:0; transition:opacity .18s ease;
+      background: rgba(92,194,171,0.12);
+      color: var(--brand-secondary);
+      font-weight:900; font-size: 3rem;
+      display:grid; place-items:center;
+      border-radius:8px;
+      pointer-events:none; /* laat klikken door */
+    }
+    .day-col:hover::after { opacity:1; }
+
     /* Tips slider */
     .tips { list-style:none; padding:0; margin:0; }
-    .tips li { display:none; align-items:center; gap:10px; line-height:1.35; }
+    .tips li { display:none; align-items:flex-start; gap:10px; line-height:1.35; }
     .tips li.active { display:flex; }
     .tip-ico { width:28px; height:28px; flex:0 0 auto; }
-    .tips-dots { display:flex; gap:6px; justify-content:center; margin-top:10px; }
-    .tips-dots .dot { width:10px; height:10px; border-radius:50%; border:1px solid #1A224C; background:transparent; opacity:.6; cursor:pointer; }
-    .tips-dots .dot.active { background:#1A224C; opacity:1; }
+
+    .tips-dots { display:flex; gap:8px; justify-content:center; margin-top:12px; }
+    .tips-dots .dot {
+      width:10px; height:10px; aspect-ratio:1/1;
+      border-radius:50%;
+      border:1px solid var(--brand-primary);
+      background:transparent; opacity:.55; cursor:pointer;
+      display:inline-block;
+    }
+    .tips-dots .dot.active { background:var(--brand-primary); opacity:1; }
 
     /* Snapshot overlays bij export */
-    .snapshot-overlay { position:absolute; inset:0; width:100%; height:100%; border-radius:inherit; object-fit:cover; pointer-events:none; }
+    .snapshot-overlay {
+      position:absolute; inset:0; width:100%; height:100%;
+      border-radius:inherit; object-fit:cover; pointer-events:none;
+    }
   </style>
 
   <!-- PDF deps -->
@@ -164,6 +218,7 @@
 
   <!-- Content -->
   <main class="wrap">
+
     <!-- Panel: PLANNER -->
     <section id="panel-planner" class="panel active" role="tabpanel" aria-labelledby="tab-planner">
       <div class="planner-layout">
@@ -186,13 +241,13 @@
           <div class="card">
             <h3>Nieuw studieblok plannen</h3>
             <button id="openAddBlock" class="btn">Blok toevoegen</button>
-            <p class="hint">Standaardduur: 25 min (aanpasbaar). Dubbelklik ook in het rooster om snel te plannen.</p>
+            <p class="hint">Standaardduur: 25 min (aanpasbaar).</p>
           </div>
 
           <form id="addSubjectForm" class="card">
             <div class="row">
               <label for="subjectName">Nieuw vak/hobby</label>
-              <input id="subjectName" type="text" placeholder="Frans, Wiskunde, Gitaar …" required>
+              <input id="subjectName" type="text" placeholder="Frans, Wiskunde, gitaarles …" required>
             </div>
             <div class="row two">
               <div>
@@ -217,7 +272,7 @@
             <div class="legend" id="legend"></div>
           </div>
           <div id="weekGrid" class="week-grid" aria-label="Weekrooster (ma-zo)"></div>
-          <p class="subtle">Tip: plan afwisselend (interleaving) en geef jezelf tijd ertussen (spaced practice). Dubbelklik in het rooster om een blok te plaatsen.</p>
+          <p class="subtle">Tip: plan afwisselend (interleaving) en geef jezelf tijd ertussen (spaced practice).</p>
         </section>
       </div>
     </section>
@@ -230,22 +285,22 @@
           <h2>Hoe verliep jouw studie?</h2>
           <div class="dials">
             <div class="dial">
-              <div class="dial-face" data-name="interactie"></div>
+              <div class="dial-face" data-name="interactie" style="width:64px;height:64px;border-radius:50%;"></div>
               <label>Interactie<br><small>(collectief ↔ individueel)</small></label>
               <input type="range" min="0" max="100" value="50" data-dial="interactie">
             </div>
             <div class="dial">
-              <div class="dial-face" data-name="moeilijkheid"></div>
+              <div class="dial-face" data-name="moeilijkheid" style="width:64px;height:64px;border-radius:50%;"></div>
               <label>Moeilijkheid<br><small>(niet makkelijk ↔ makkelijk)</small></label>
               <input type="range" min="0" max="100" value="50" data-dial="moeilijkheid">
             </div>
             <div class="dial">
-              <div class="dial-face" data-name="spreading"></div>
+              <div class="dial-face" data-name="spreading" style="width:64px;height:64px;border-radius:50%;"></div>
               <label>Tijd & ritme<br><small>(blocked ↔ spaced)</small></label>
               <input type="range" min="0" max="100" value="50" data-dial="spreading">
             </div>
             <div class="dial">
-              <div class="dial-face" data-name="locatie"></div>
+              <div class="dial-face" data-name="locatie" style="width:64px;height:64px;border-radius:50%;"></div>
               <label>Locatie<br><small>(school ↔ thuis/internaat)</small></label>
               <input type="range" min="0" max="100" value="50" data-dial="locatie">
             </div>
@@ -321,7 +376,7 @@
 
         <div id="rowTitle" class="row">
           <label for="blockTitle">Titel</label>
-          <input id="blockTitle" type="text" placeholder="Kernbegrip / hoofdstuknaam …">
+          <input id="blockTitle" type="text" placeholder="Studieblok … (auto)">
         </div>
 
         <div id="rowDesc" class="row">
@@ -367,7 +422,6 @@
           </div>
         </div>
 
-        <!-- Verplaatst: geen 'Zelfgetoetst?' meer in deze modal -->
         <div id="rowNote" class="row">
           <label for="blockNote">Notitie (optioneel)</label>
           <input id="blockNote" type="text" placeholder="Extra: paginanummers, bron …">
@@ -468,10 +522,13 @@
       <div class="modal-body">
         <p>Gebruik de <strong>Planner</strong> om per week blokken te plannen. Hou rekening met <em>interleaving</em>, <em>spaced practice</em> en <em>korte pauzes</em>.</p>
         <ul class="tips" id="tipsList">
+          <li><strong>Korte pauze timen:</strong> gebruik een kookwekker (5–10 min), niet Netflix.</li>
+          <li><strong>Varieer je pauzes:</strong> even wandelen, water halen, tekenen; vermijd schermen.</li>
+          <li><strong>Vergeten helpt leren:</strong> even laten ‘zakken’ maakt ophalen inspannend en effectief.</li>
           <li><strong>Braindump:</strong> schrijf 2 min alles neer wat je nog weet zonder te spieken.</li>
-          <li><strong>Flashcards:</strong> korte vraag-antwoord kaarten met zelftoetsing.</li>
+          <li><strong>Flashcards:</strong> korte vraag-antwoord met zelftoetsing.</li>
           <li><strong>Challenge grid:</strong> oude leerstof = meer punten → kies slim wat je oefent.</li>
-          <li><strong>Ophalen & uitleggen:</strong> leg de leerstof aan iemand anders uit (of aan jezelf).</li>
+          <li><strong>Uitleggen:</strong> leg de leerstof aan iemand anders uit (of aan jezelf).</li>
           <li><strong>Niet enkel lezen/overschrijven:</strong> actief oefenen werkt beter.</li>
         </ul>
         <div id="tipsDots" class="tips-dots" aria-label="Tips navigatie"></div>
@@ -487,8 +544,7 @@
     // Brand & constants
     // ===========================
     const BRAND = { name: "edUP!", primary: "#1A224C", secondary: "#5CC2AB" };
-    const PX_PER_MIN = 1.25; // ↑ groter: items minder "slim"
-    const DEFAULT_BLOCK_MIN = 25;
+    const PX_PER_MIN = 1.0; // iets groter voor leesbaarheid
 
     // Rooster-venster (07:00 → 24:00)
     const START_HOUR = 7;
@@ -496,7 +552,7 @@
     const START_MIN  = START_HOUR * 60;  // 420
     const END_MIN    = END_HOUR   * 60;  // 1440
 
-    // Regels
+    // Break & duration policy
     const LONG_BLOCK_MIN = 50;
     const BREAK_GAP_MIN  = 5;
 
@@ -537,7 +593,6 @@
       return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
     }
 
-    // Bewaar modaldraft bij verlaten pagina
     function saveAllState() {
       try {
         const wk = weekStartInput.value || isoDate(mondayOf(new Date()));
@@ -724,6 +779,14 @@
       }
     });
 
+    // Close buttons (x + ghost buttons)
+    qsa('[data-close]').forEach(btn => btn.addEventListener('click', () => {
+      const m = btn.closest('.modal');
+      if (!m) return;
+      if (m.id === 'blockModal') clearBlockDraft();
+      closeModal(m);
+    }));
+
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         const topOpen = qsa('.modal').find(m => !m.hasAttribute('hidden'));
@@ -760,37 +823,25 @@
       subjects.forEach(s => perSubject[s.id] = s.target);
       blocks.forEach(b => {
         const subj = subjects.find(s => s.id === b.subjectId);
-        const cnt = Math.max(1, Math.round(b.duration/DEFAULT_BLOCK_MIN));
+        const cnt = Math.max(1, Math.round(b.duration/25)); // per 25-min eenheid
         if (subj && !subj.hobby && perSubject[b.subjectId] != null) perSubject[b.subjectId] -= cnt;
       });
       return perSubject;
     }
 
-    // Volgende Stud ieblok-nummer = max bestaand nummer + 1 (per week/subject)
-    function nextStudyBlockNumber(subjectId) {
-      const blocks = getBlocks().filter(b => b.subjectId === subjectId);
-      let maxN = 0;
-      for (const b of blocks) {
-        const m = /^Studieblok\s+(\d+)/i.exec(b.title || "");
-        if (m) maxN = Math.max(maxN, parseInt(m[1], 10));
-      }
-      return maxN + 1;
-    }
-    function nextStudyBlockTitle(subjectId) {
-      return `Studieblok ${nextStudyBlockNumber(subjectId)}`;
-    }
-
     function renderWeekGrid() {
       weekGrid.innerHTML = "";
 
+      // Header rij
       const head = document.createElement('div');
       head.className = 'row header';
-      const hours = document.createElement('div');
-      hours.className = 'hours-col';
-      hours.innerHTML = "<div></div>";
-      head.appendChild(hours);
+      const hoursHeader = document.createElement('div');
+      hoursHeader.className = 'hours-col';
+      hoursHeader.innerHTML = "<div></div>"; // lege hoek
+      head.appendChild(hoursHeader);
       const dayNames = ["Zondag","Maandag","Dinsdag","Woensdag","Donderdag","Vrijdag","Zaterdag"];
-      [1,2,3,4,5,6,0].forEach(d => {
+      const dayOrder = [1,2,3,4,5,6,0];
+      dayOrder.forEach(d => {
         const c = document.createElement('div');
         c.className = 'day-col head';
         c.textContent = dayNames[d];
@@ -798,75 +849,103 @@
       });
       weekGrid.appendChild(head);
 
+      // Body met urenrail + dagkolommen
       const body = document.createElement('div');
       body.className = 'body';
 
-      // Urenrail (07:00 → 24:00)
+      const blocks = getBlocks();
+
+      // ——— Dynamische uurhoogtes (uniform per uur over alle dagen):
+      // 19:00 verdubbelen als er ≥1 blok in dat uur; verdrievoudigen als ≥2 blokken in dat uur.
+      const hourHeights = {};
+      for (let h = START_HOUR; h < END_HOUR; h++) {
+        const countInHour = blocks.filter(b => Math.floor(b.startMin/60) === h).length;
+        let scale = 1;
+        if (h >= 19) {
+          if (countInHour >= 2) scale = 3;
+          else if (countInHour >= 1) scale = 2;
+          else scale = 1; // geen blok → normaal
+        }
+        hourHeights[h] = 60 * PX_PER_MIN * scale;
+      }
+      const cumTop = {};
+      let totalHeight = 0;
+      for (let h = START_HOUR; h < END_HOUR; h++) {
+        cumTop[h] = totalHeight;
+        totalHeight += hourHeights[h];
+      }
+      // Helpers: tijd → y en y → tijd (binnen ons venster)
+      function timeToY(min) {
+        let m = Math.max(START_MIN, Math.min(END_MIN, min));
+        let y = 0;
+        for (let h = START_HOUR; h < END_HOUR; h++) {
+          const hourStart = h * 60, hourEnd = (h+1)*60;
+          const hh = hourHeights[h];
+          if (m >= hourEnd) { y += hh; continue; }
+          if (m <= hourStart) { break; }
+          const frac = (m - hourStart) / 60;
+          y += hh * frac;
+          break;
+        }
+        return y;
+      }
+      function yToMinutes(y) {
+        let acc = 0;
+        for (let h = START_HOUR; h < END_HOUR; h++) {
+          const hh = hourHeights[h];
+          if (y > acc + hh) { acc += hh; continue; }
+          const frac = Math.max(0, Math.min(1, (y - acc) / hh));
+          return h*60 + Math.round(frac * 60);
+        }
+        return END_MIN;
+      }
+
+      // Urenrail (links)
       const hr = document.createElement('div');
       hr.className = 'hours-col';
-      hr.style.height = ((END_MIN - START_MIN) * PX_PER_MIN) + 'px';
+      hr.style.height = totalHeight + 'px';
       for (let h = START_HOUR; h < END_HOUR; h++) {
         const mark = document.createElement('div');
         mark.className = 'hour-mark';
-        mark.style.height = (60 * PX_PER_MIN) + 'px';
+        mark.style.height = hourHeights[h] + 'px';
         mark.textContent = `${String(h).padStart(2,'0')}:00`;
         hr.appendChild(mark);
       }
       body.appendChild(hr);
 
-      const blocks = getBlocks();
-
-      [1,2,3,4,5,6,0].forEach(day => {
+      // Dagkolommen
+      dayOrder.forEach(day => {
         const col = document.createElement('div');
         col.className = 'day-col';
-        col.style.height = ((END_MIN - START_MIN) * PX_PER_MIN) + 'px';
+        col.style.height = totalHeight + 'px';
         col.dataset.day = String(day);
 
-        // achtergrond uurlijnen
+        // uurlijnen
         for (let h = START_HOUR; h <= END_HOUR; h++) {
           const line = document.createElement('div');
           line.className = 'hour-line';
-          line.style.top = ((h - START_HOUR) * 60 * PX_PER_MIN) + 'px';
+          const top = (h === START_HOUR) ? 0 : cumTop[h-1] + hourHeights[h-1];
+          line.style.top = top + 'px';
           col.appendChild(line);
         }
 
-        // Snel plannen: dubbelklik in lege ruimte
-        col.addEventListener('dblclick', (e) => {
-          if (e.target.closest('.study-block')) return; // niet op een blok zelf
-          const rect = col.getBoundingClientRect();
-          const y = e.clientY - rect.top;
-          const minFromStart = Math.max(0, Math.round((y / PX_PER_MIN) / 5) * 5);
-          const startMin = START_MIN + Math.min(minFromStart, END_MIN - START_MIN - DEFAULT_BLOCK_MIN);
-          const defaultSubject = (subjects.find(s => !s.hobby) || subjects[0] || {}).id || '';
-          openBlockModal({
-            subjectId: defaultSubject,
-            day,
-            startMin,
-            duration: DEFAULT_BLOCK_MIN,
-            title: '',
-            desc: '',
-            technique: '',
-            note: ''
-          });
-        });
-
-        // blocks
+        // blocks van deze dag
         blocks.filter(b => b.day === day).forEach(b => {
           const sub = subjects.find(s => s.id === b.subjectId);
-
           const bStart = b.startMin;
           const bEnd   = b.startMin + b.duration;
           const visStart = Math.max(bStart, START_MIN);
           const visEnd   = Math.min(bEnd, END_MIN);
           if (visEnd <= START_MIN || visStart >= END_MIN) return;
 
-          const topPx   = (visStart - START_MIN) * PX_PER_MIN;
-          const heightPx= (visEnd   - visStart) * PX_PER_MIN;
-
+          const topPx    = timeToY(visStart);
+          const bottomPx = timeToY(visEnd);
+          const heightPx = Math.max(14, bottomPx - topPx); // min hoogte voor klikbaarheid
           const truncatedTop = bStart < START_MIN;
           const truncatedBot = bEnd   > END_MIN;
 
-          const block = document.createElement('div'); // geen button → checkbox binnenin is oké
+          const block = document.createElement('button');
+          block.type = "button";
           block.className = 'study-block';
           block.style.top = topPx + 'px';
           block.style.height = heightPx + 'px';
@@ -875,7 +954,6 @@
                         (truncatedTop ? " • (Begint vóór 07:00)" : "") +
                         (truncatedBot ? " • (Eindigt na 24:00)" : "");
 
-          // Inhoud
           if (sub && sub.hobby) {
             block.innerHTML = `
               <span class="sb-time">${minutesToHHMM(b.startMin)} • ${b.duration}m</span>
@@ -893,30 +971,46 @@
               ${b.desc ? `<span class="sb-desc">${b.desc}</span>` : ''}
               ${b.note ? `<span class="sb-note">${b.note}</span>` : ''}
             `;
-
-            // Done-toggle (alleen niet-hobby)
-            const doneToggle = document.createElement('input');
-            doneToggle.type = 'checkbox';
-            doneToggle.className = 'sb-done';
-            doneToggle.checked = !!b.done;
-            doneToggle.title = 'Markeer als afgewerkt';
-            doneToggle.addEventListener('click', (ev) => ev.stopPropagation());
-            doneToggle.addEventListener('change', () => {
-              const all = getBlocks();
-              const idx = all.findIndex(x => x.id === b.id);
-              if (idx > -1) {
-                all[idx].done = doneToggle.checked;
-                setBlocks(all); // herteken met juiste grijze kleur
-              }
-            });
-            block.appendChild(doneToggle);
-            if (b.done) block.classList.add('done');
           }
 
-          // Klik op blok = bewerken
-          block.addEventListener('click', () => editBlock(b.id));
+          // Done checkbox in planner
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.className = 'done-toggle';
+          cb.title = 'Markeer als afgewerkt';
+          cb.checked = !!b.tested;
+          if (cb.checked) block.classList.add('done');
+          cb.addEventListener('change', () => {
+            b.tested = cb.checked;
+            if (b.tested) block.classList.add('done'); else block.classList.remove('done');
+            const all = getBlocks();
+            const idx = all.findIndex(x => x.id === b.id);
+            if (idx >= 0) { all[idx] = b; setBlocks(all); }
+          });
+          block.appendChild(cb);
+
+          // Klikken op blok = editen
+          block.addEventListener('click', (ev) => {
+            if (ev.target === cb) return; // toggle handled
+            editBlock(b.id);
+          });
 
           col.appendChild(block);
+        });
+
+        // Klikken in lege ruimte: nieuw blok plannen (snappen op 5 min)
+        col.addEventListener('click', (e) => {
+          if (e.target.closest('.study-block')) return;
+          const rect = col.getBoundingClientRect();
+          const y = e.clientY - rect.top;
+          let minutes = yToMinutes(y);
+          minutes = Math.max(START_MIN, Math.min(END_MIN-5, minutes));
+          const snapped = Math.round(minutes / 5) * 5;
+          openBlockModal({
+            day,
+            startMin: snapped,
+            duration: 25
+          });
         });
 
         body.appendChild(col);
@@ -980,11 +1074,13 @@
     function clearBlockDraft() { localStorage.removeItem(SKEY_BLOCK_DRAFT); }
 
     ['#blockSubject','#blockTitle','#blockDesc','#blockTechnique','#blockDay','#blockStart','#blockDur','#blockNote']
-      .forEach(sel => qs(sel)?.addEventListener('input', saveBlockDraft));
+      .forEach(sel => qs(sel).addEventListener('input', saveBlockDraft));
 
-    // Titel auto-generator met "auto" bewaking
-    let blockTitleAuto = true;
-    qs('#blockTitle').addEventListener('input', () => { blockTitleAuto = false; });
+    // Titel auto-generator (niet-hobby): "Studieblok X" (X = aantal dit vak in deze week + 1)
+    function nextStudyBlockTitle(subjectId) {
+      const count = getBlocks().filter(b => b.subjectId === subjectId).length;
+      return `Studieblok ${count + 1}`;
+    }
 
     function toggleHobbyFields(subjectId) {
       const hobby = isHobby(subjectId);
@@ -995,11 +1091,10 @@
         qs('#blockDesc').value = '';
         qs('#blockTechnique').value = '';
         qs('#blockNote').value = '';
-        blockTitleAuto = false;
       } else {
-        // indien nog auto → zet juiste nummer
-        if (blockTitleAuto) {
-          qs('#blockTitle').value = nextStudyBlockTitle(subjectId);
+        if (!qs('#blockTitle').value) {
+          const sid = qs('#blockSubject').value;
+          if (sid) qs('#blockTitle').value = nextStudyBlockTitle(sid);
         }
       }
       updateDescCount();
@@ -1008,72 +1103,48 @@
     function openBlockModal(prefill=null) {
       fillSubjectSelect();
       blockForm.reset();
-      qs('#blockDur').value = DEFAULT_BLOCK_MIN;
       descCount.textContent = '0/25 woorden';
-      blockTitleAuto = true;
 
-      const draft = !prefill ? getBlockDraft() : null;
+      // Veilige defaults + merge prefill
+      const data = {
+        subjectId: subjects[0]?.id || "",
+        day: 1,
+        startMin: parseTimeToMinutes("16:00"),
+        duration: 25,
+        title: "",
+        desc: "",
+        technique: "",
+        note: "",
+        ...(prefill || {})
+      };
 
-      if (prefill || draft) {
-        const data = prefill || {
-          subjectId: draft.subjectId || (subjects[0]?.id || ''),
-          day: Number(draft.day || 1),
-          startMin: draft.start ? parseTimeToMinutes(draft.start) : parseTimeToMinutes('16:00'),
-          duration: Number(draft.dur || DEFAULT_BLOCK_MIN),
-          title: draft.title || '',
-          desc: draft.desc || '',
-          technique: draft.technique || '',
-          note: draft.note || '',
-        };
+      // Vullen
+      qs('#blockSubject').value   = data.subjectId;
+      qs('#blockDay').value       = String(data.day);
+      qs('#blockStart').value     = minutesToHHMM(data.startMin);
+      qs('#blockDur').value       = data.duration;
 
-        qs('#blockSubject').value   = data.subjectId;
-        qs('#blockDay').value       = String(data.day);
-        qs('#blockStart').value     = minutesToHHMM(data.startMin);
-        qs('#blockDur').value       = data.duration;
-
-        const hobby = isHobby(data.subjectId);
-        if (!hobby) {
-          const autoTitle = data.title || nextStudyBlockTitle(data.subjectId);
-          qs('#blockTitle').value     = autoTitle;
-          blockTitleAuto = /^Studieblok\s+\d+$/i.test(autoTitle);
-          qs('#blockDesc').value      = data.desc  || '';
-          qs('#blockTechnique').value = data.technique || '';
-          qs('#blockNote').value      = data.note || '';
-        } else {
-          qs('#blockTitle').value = '';
-          qs('#blockDesc').value = '';
-          qs('#blockTechnique').value = '';
-          qs('#blockNote').value = '';
-          blockTitleAuto = false;
-        }
-        updateDescCount();
-
-        if (prefill) blockForm.dataset.editId = prefill.id;
-        else delete blockForm.dataset.editId;
-      } else {
-        delete blockForm.dataset.editId;
-        const sid = qs('#blockSubject').value || (subjects[0]?.id || '');
-        if (sid && !isHobby(sid)) {
-          qs('#blockTitle').value = nextStudyBlockTitle(sid);
-          blockTitleAuto = true;
-        }
+      const hobby = isHobby(data.subjectId);
+      if (!hobby) {
+        const auto = nextStudyBlockTitle(data.subjectId);
+        qs('#blockTitle').value     = data.title || auto;
+        qs('#blockDesc').value      = data.desc  || '';
+        qs('#blockTechnique').value = data.technique || '';
+        qs('#blockNote').value      = data.note || '';
       }
+      updateDescCount();
+
+      // Nieuw vs edit
+      if (data.id) blockForm.dataset.editId = data.id;
+      else delete blockForm.dataset.editId;
 
       toggleHobbyFields(qs('#blockSubject').value);
       openModal(blockModal);
+      setTimeout(() => qs('#blockSubject').focus(), 0);
     }
-
     openAddBlockBtn.addEventListener('click', () => openBlockModal());
-    qs('#blockSubject').addEventListener('change', (e) => {
-      // Als titel "auto" is, hernummeren bij vak-wissel
-      toggleHobbyFields(e.target.value);
-      if (blockTitleAuto && !isHobby(e.target.value)) {
-        qs('#blockTitle').value = nextStudyBlockTitle(e.target.value);
-      }
-      saveBlockDraft();
-    });
+    qs('#blockSubject').addEventListener('change', (e) => toggleHobbyFields(e.target.value));
 
-    // ——— Helpers voor regels ———
     function touchingWithin(a, b, maxGapMin) {
       if (!a || !b) return false;
       const aEnd = a.startMin + a.duration;
@@ -1190,7 +1261,7 @@
       const sub       = qs('#blockSubject').value;
       const day       = Number(qs('#blockDay').value);
       const startMin  = parseTimeToMinutes(qs('#blockStart').value);
-      const duration  = Math.max(10, Number(qs('#blockDur').value || DEFAULT_BLOCK_MIN));
+      const duration  = Math.max(10, Number(qs('#blockDur').value || 25));
 
       const subjObj   = subjects.find(x => x.id === sub);
       const hobby     = !!(subjObj && subjObj.hobby);
@@ -1211,7 +1282,7 @@
         const save = () => { blocks[idx] = edited; setBlocks(blocks); clearBlockDraft(); closeModal(blockModal); };
         proposeBlock(save, true);
       } else {
-        const newB = { id: crypto.randomUUID(), subjectId: sub, day, startMin, duration, title, desc, technique, note, done:false };
+        const newB = { id: crypto.randomUUID(), subjectId: sub, day, startMin, duration, title, desc, technique, note, tested:false };
         pendingBlock = newB; pendingEdit = false;
         const save = () => { blocks.push(newB); setBlocks(blocks); clearBlockDraft(); closeModal(blockModal); };
         proposeBlock(save, false);
@@ -1223,7 +1294,7 @@
       if (!b) return;
       openBlockModal(b);
 
-      // Quick delete
+      // Quick delete tijdens editen
       const existing = qs('#blockDelete');
       if (existing) existing.remove();
       const delBtn = document.createElement('button');
@@ -1258,10 +1329,12 @@
       const face = qs(`.dial-face[data-name="${name}"]`);
       if (!face) return;
       face.style.background = `conic-gradient(${BRAND.secondary} ${val*3.6}deg, #E8EEF6 ${val*3.6}deg)`;
-      face.querySelector?.('span')?.remove();
+      face.textContent = '';
       const lbl = document.createElement('span');
       lbl.textContent = `${val}`;
       face.appendChild(lbl);
+      face.style.display = 'grid';
+      face.style.placeItems = 'center';
     }
     dialInputs.forEach(inp => {
       const key = `dial_${inp.dataset.dial}`;
@@ -1392,7 +1465,7 @@
     });
 
     // ===========================
-    // Export PDF — (zelfde als vorige werkende versie)
+    // Export PDF — split by active tab (export fixes eerder behandeld)
     // ===========================
     const exportBtn = qs('#exportBtn');
 
@@ -1401,6 +1474,7 @@
       return canvas.toDataURL('image/png');
     }
 
+    // Load PNG as DataURL (no canvas => no taint)
     let _logoDataUrlPromise = null;
     function getLogoDataUrl() {
       if (_logoDataUrlPromise) return _logoDataUrlPromise;
@@ -1440,7 +1514,7 @@
           pdf.addImage(dataUrl, 'PNG', 16, 8, w, h);
           textX = 16 + w + 10;
         }
-      } catch (e) {}
+      } catch {}
       pdf.setTextColor(255,255,255);
       pdf.setFont('helvetica','bold'); pdf.setFontSize(14);
       pdf.text(titleText, textX, 28);
@@ -1497,21 +1571,19 @@
       pdf.save(`${(name||'edUP')}-studie.pdf`);
     }
 
-    // Split export by active tab
     exportBtn.addEventListener('click', async () => {
       const isPlannerActive = panelPlanner.classList.contains('active');
       const nm = (prompt("Naam (op PDF) – optioneel:", "") || "").trim();
       await exportPDF(isPlannerActive, !isPlannerActive, nm);
     });
 
-    // Explicit reflect export button
     qs('#exportReflect').addEventListener('click', async () => {
       const nm = (prompt("Naam (op PDF) – optioneel:", "") || "").trim();
       await exportPDF(false, true, nm);
     });
 
     // ===========================
-    // Help modal + tips slider
+    // Help modal + tips slider (met eerdere icon-stijl)
     // ===========================
     const helpModal = qs('#helpModal');
     qs('#helpFab').addEventListener('click', () => { openModal(helpModal); startTipsAuto(); });
@@ -1572,20 +1644,16 @@
 
     showTip(0);
 
-    // ——— sluiting via overlay + [data-close]
+    // Klik op overlay buiten modal om te sluiten
     qsa('.modal').forEach(m => {
       m.addEventListener('click', (e) => {
         if (e.target === m) {
           if (m.id === 'blockModal') clearBlockDraft();
+          if (m.id === 'helpModal')  { try { stopTipsAuto(); } catch {} }
           closeModal(m);
         }
       });
     });
-    qsa('[data-close]').forEach(btn => btn.addEventListener('click', () => {
-      const m = btn.closest('.modal');
-      if (m && m.id === 'blockModal') clearBlockDraft();
-      closeModal(m);
-    }));
 
     // ===========================
     // Init
