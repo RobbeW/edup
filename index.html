@@ -829,7 +829,18 @@
       return perSubject;
     }
 
-    // Compute per-hour px/min based on max overlaps in that hour across all days
+// Rooster-venster (07:00 → 24:00)
+const START_HOUR = 7;
+const END_HOUR   = 24;
+const START_MIN  = START_HOUR * 60;
+const END_MIN    = END_HOUR   * 60;
+
+// === Dynamic hour scaling — must be defined BEFORE computeHourPxPerMin() ===
+const SCALE_EMPTY = 0.5; // px/min when an hour has no blocks
+const SCALE_ONE   = 3;   // px/min when an hour has 1 block (max across days)
+const SCALE_MULTI = 6;   // px/min when an hour has 2+ blocks (max across days)
+
+    
 function computeHourPxPerMin(blocks) {
   const hourScale = {};
   for (let h = START_HOUR; h < END_HOUR; h++) hourScale[h] = SCALE_EMPTY;
@@ -1684,6 +1695,7 @@ const SCALE_MULTI = 6;   // px per minute when hour has 2+ blocks
   </script>
 </body>
 </html>
+
 
 
 
