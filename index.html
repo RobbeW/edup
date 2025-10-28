@@ -21,19 +21,27 @@
   <!-- Basestyles -->
   <link rel="stylesheet" href="styles.css">
 
-  <!-- Small CSS patches -->
+  <!-- Kleine CSS-patches -->
   <style>
     .subjects { display: grid; gap: 8px; }
     .subject-item { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
     .subject-item .dot { width:10px; height:10px; border-radius:999px; flex:0 0 auto; }
     .subject-item .s-name { flex:1 1 120px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .subject-item .s-target, .subject-item .s-remain { flex:0 0 auto; white-space:nowrap; }
+    .subject-item .btn { flex:0 0 auto; }
     .tag { font-size:.75em; background:#E8EEF6; color:#1A224C; padding:2px 6px; border-radius:6px; margin-left:6px; }
 
-    /* Block card + done badge */
-    .study-block { position:relative; text-align:left; }
-    .study-block .sb-time { display:block; font-weight:700; }
-    .study-block .sb-name { display:block; }
+    /* ——— Blokkaartjes ——— */
+    .study-block {
+      position:absolute; /* belangrijk voor plaatsing */
+      text-align:left;
+      padding:6px 8px 8px 8px; /* iets meer body */
+      border-radius:8px;
+      color:#fff;
+      box-shadow:0 1px 2px rgba(0,0,0,.06);
+    }
+    .study-block .sb-time { display:block; font-weight:700; line-height:1.15; }
+    .study-block .sb-name { display:block; line-height:1.15; }
     .study-block .sb-title,
     .study-block .sb-tech,
     .study-block .sb-desc,
@@ -42,32 +50,25 @@
       overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
       opacity:.95;
     }
-    .study-block .sb-tech { font-size:0.85em; opacity:.8; }
-    .study-block .sb-desc { font-size:0.9em; }
-    .study-block .sb-note { font-size:0.85em; opacity:.75; }
+    .study-block .sb-tech { font-size:0.85em; opacity:.85; }
+    .study-block .sb-desc { font-size:0.95em; }
+    .study-block .sb-note { font-size:0.85em; opacity:.8; }
 
-    /* Done toggle (checkbox) in top-right of block */
+    /* Done-checkbox in blok (niet voor hobby) */
     .sb-done {
-      position:absolute; top:6px; right:6px;
-      display:flex; align-items:center; gap:6px;
-      background:rgba(255,255,255,.75);
-      border-radius:10px; padding:2px 6px;
-      box-shadow:0 1px 2px rgba(0,0,0,.08);
+      position:absolute;
+      top:6px; right:6px;
+      width:16px; height:16px;
+      accent-color:#1A224C;
+      cursor:pointer;
     }
-    .sb-done input { width:14px; height:14px; }
-
-    /* Greyed when done */
     .study-block.done {
-      background:#cbd5e1 !important; /* slate-300 */
-      color:#1f2937;                  /* slate-800 */
-      filter:saturate(.2) contrast(.95);
+      background:#cfd8dc !important;
+      color:#263238;
     }
 
-    /* Counters / hints */
     .hint { font-size:.85em; color:#667; }
     .hint.error { color:#b00020; }
-
-    /* Check-row align */
     .check-row .check { display:flex; align-items:center; gap:8px; }
 
     /* Quadrant */
@@ -101,21 +102,12 @@
     /* Modals */
     .modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:grid; place-items:center; padding:16px; }
     .modal[hidden] { display:none; }
-    .modal-box {
-      width:min(680px, 92vw);
-      max-height:90vh;
-      background:#fff; border-radius:14px; box-shadow:0 12px 40px rgba(0,0,0,.2);
-      display:flex; flex-direction:column; overflow:hidden;
-    }
-    .modal-head {
-      display:flex; align-items:center; justify-content:space-between;
-      padding:14px 16px; border-bottom:1px solid #e8eef6; background:#fff; position:sticky; top:0; z-index:1;
-    }
+    .modal-box { width:min(680px, 92vw); max-height:90vh; background:#fff; border-radius:14px; box-shadow:0 12px 40px rgba(0,0,0,.2); display:flex; flex-direction:column; overflow:hidden; }
+    .modal-head { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid #e8eef6; background:#fff; position:sticky; top:0; z-index:1; }
     .modal-body { padding:14px 16px; overflow:auto; -webkit-overflow-scrolling:touch; }
     .modal-actions { display:flex; gap:8px; justify-content:flex-end; padding:12px 16px; border-top:1px solid #e8eef6; background:#fff; position:sticky; bottom:0; z-index:1; }
     body.modal-open { overflow:hidden; }
 
-    /* QoL */
     .row { display:grid; gap:6px; margin-bottom:10px; }
     .row.two { grid-template-columns:1fr 1fr; gap:10px; }
     .row input[type="text"], .row input[type="time"], .row input[type="number"], .row input[type="date"], .row select, .row textarea {
@@ -123,19 +115,16 @@
     }
     .btn { cursor:pointer; }
 
-    /* Tips carousel */
+    /* Tips slider */
     .tips { list-style:none; padding:0; margin:0; }
     .tips li { display:none; align-items:center; gap:10px; line-height:1.35; }
     .tips li.active { display:flex; }
     .tip-ico { width:28px; height:28px; flex:0 0 auto; }
     .tips-dots { display:flex; gap:6px; justify-content:center; margin-top:10px; }
-    .tips-dots .dot {
-      width:10px; height:10px; border-radius:50%;
-      border:1px solid #1A224C; background:transparent; opacity:.6; cursor:pointer;
-    }
+    .tips-dots .dot { width:10px; height:10px; border-radius:50%; border:1px solid #1A224C; background:transparent; opacity:.6; cursor:pointer; }
     .tips-dots .dot.active { background:#1A224C; opacity:1; }
 
-    /* Export overlay snapshots */
+    /* Snapshot overlays bij export */
     .snapshot-overlay { position:absolute; inset:0; width:100%; height:100%; border-radius:inherit; object-fit:cover; pointer-events:none; }
   </style>
 
@@ -149,7 +138,15 @@
     <a class="brand" href="./" aria-label="edUP! Academy">
       <picture>
         <source srcset="media/edup_academy.svg" type="image/svg+xml">
-        <img src="media/edup_academy.png" alt="edUP! Academy" class="brand-logo" width="160" height="40" loading="eager" decoding="async">
+        <img
+          src="media/edup_academy.png"
+          alt="edUP! Academy"
+          class="brand-logo"
+          width="160"
+          height="40"
+          loading="eager"
+          decoding="async"
+        >
       </picture>
       <span class="brand-name"></span>
     </a>
@@ -167,7 +164,6 @@
 
   <!-- Content -->
   <main class="wrap">
-
     <!-- Panel: PLANNER -->
     <section id="panel-planner" class="panel active" role="tabpanel" aria-labelledby="tab-planner">
       <div class="planner-layout">
@@ -190,7 +186,7 @@
           <div class="card">
             <h3>Nieuw studieblok plannen</h3>
             <button id="openAddBlock" class="btn">Blok toevoegen</button>
-            <p class="hint">Standaardduur: 25 min (aanpasbaar).</p>
+            <p class="hint">Standaardduur: 25 min (aanpasbaar). Dubbelklik ook in het rooster om snel te plannen.</p>
           </div>
 
           <form id="addSubjectForm" class="card">
@@ -221,7 +217,7 @@
             <div class="legend" id="legend"></div>
           </div>
           <div id="weekGrid" class="week-grid" aria-label="Weekrooster (ma-zo)"></div>
-          <p class="subtle">Tip: plan afwisselend (interleaving) en geef jezelf tijd ertussen (spaced practice).</p>
+          <p class="subtle">Tip: plan afwisselend (interleaving) en geef jezelf tijd ertussen (spaced practice). Dubbelklik in het rooster om een blok te plaatsen.</p>
         </section>
       </div>
     </section>
@@ -323,10 +319,9 @@
           <select id="blockSubject" required></select>
         </div>
 
-        <!-- Hobby's: geen titel/desc/technique; Vakken: auto "Studieblok X" -->
         <div id="rowTitle" class="row">
           <label for="blockTitle">Titel</label>
-          <input id="blockTitle" type="text" placeholder="Studieblok X (auto)">
+          <input id="blockTitle" type="text" placeholder="Kernbegrip / hoofdstuknaam …">
         </div>
 
         <div id="rowDesc" class="row">
@@ -372,6 +367,7 @@
           </div>
         </div>
 
+        <!-- Verplaatst: geen 'Zelfgetoetst?' meer in deze modal -->
         <div id="rowNote" class="row">
           <label for="blockNote">Notitie (optioneel)</label>
           <input id="blockNote" type="text" placeholder="Extra: paginanummers, bron …">
@@ -451,9 +447,9 @@
       <div class="modal-body">
         <ul class="theory">
           <li><strong>Interleaving</strong>: afwisselen van vakken voorkomt automatisme; je brein blijft actiever en herkent beter wat echt belangrijk is.</li>
-          <li><strong>Spaced practice</strong>: herhalen met tussenpozen benut het vergeten (retrieval kost moeite) en verankert kennis dieper.</li>
-          <li><strong>Pauzes</strong>: na ~25–40 min even pauzeren (5–10 min) helpt focussen en maakt ruimte voor retrieval.</li>
-          <li><strong>Praktisch</strong>: plan geen identieke blokken direct na elkaar; leg uren (liefst 1–2 dagen) tussen blokken voor hetzelfde vak.</li>
+          <li><strong>Spaced practice</strong>: herhalen met tussenpozen benut het vergeten: ophalen (=retrieval) kost moeite en laat kennis dieper verankeren.</li>
+          <li><strong>Pauzes</strong>: na ~25–40 min even pauzeren (5–10 min) helpt focussen en maakt ruimte voor retrieval. Lange aaneengesloten blokken zijn zelden efficiënt.</li>
+          <li><strong>Praktisch</strong>: plan geen identieke blokken direct na elkaar; leg minstens enkele uren (liever 1–2 dagen) tussen blokken voor hetzelfde vak.</li>
         </ul>
       </div>
       <div class="modal-actions">
@@ -462,7 +458,7 @@
     </div>
   </div>
 
-  <!-- Help Modal (unchanged structure; dots are perfectly round via CSS above) -->
+  <!-- Help Modal -->
   <div id="helpModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle" hidden>
     <div class="modal-box">
       <div class="modal-head">
@@ -470,16 +466,13 @@
         <button type="button" class="modal-close" data-close>&times;</button>
       </div>
       <div class="modal-body">
-        <p>Gebruik de Planner om per week blokken te plannen. Hou rekening met <strong><em>interleaving</em>, <em>spaced practice</em> en <em>korte pauzes</em></strong>.</p>
+        <p>Gebruik de <strong>Planner</strong> om per week blokken te plannen. Hou rekening met <em>interleaving</em>, <em>spaced practice</em> en <em>korte pauzes</em>.</p>
         <ul class="tips" id="tipsList">
           <li><strong>Braindump:</strong> schrijf 2 min alles neer wat je nog weet zonder te spieken.</li>
           <li><strong>Flashcards:</strong> korte vraag-antwoord kaarten met zelftoetsing.</li>
           <li><strong>Challenge grid:</strong> oude leerstof = meer punten → kies slim wat je oefent.</li>
           <li><strong>Ophalen & uitleggen:</strong> leg de leerstof aan iemand anders uit (of aan jezelf).</li>
           <li><strong>Niet enkel lezen/overschrijven:</strong> actief oefenen werkt beter.</li>
-          <li><strong>Varieer pauzes:</strong> niet altijd schermpauze; wissel af met bewegen, water halen, frisse lucht.</li>
-          <li><strong>Tijd je pauzes:</strong> een Netflix-aflevering duurt te lang; gebruik desnoods een kookwekker (5–10 min).</li>
-          <li><strong>Waarom pauzes werken:</strong> even laten bezinken + een tikkeltje vergeten ⇒ ophalen is moeilijk en dát laat je leren.</li>
         </ul>
         <div id="tipsDots" class="tips-dots" aria-label="Tips navigatie"></div>
       </div>
@@ -494,16 +487,16 @@
     // Brand & constants
     // ===========================
     const BRAND = { name: "edUP!", primary: "#1A224C", secondary: "#5CC2AB" };
-    const PX_PER_MIN = 1.2;         // ↑ Bigger blocks (was 0.8)
+    const PX_PER_MIN = 1.25; // ↑ groter: items minder "slim"
     const DEFAULT_BLOCK_MIN = 25;
 
-    // Visible time window (07:00 → 24:00)
+    // Rooster-venster (07:00 → 24:00)
     const START_HOUR = 7;
     const END_HOUR   = 24;
-    const START_MIN  = START_HOUR * 60;
-    const END_MIN    = END_HOUR   * 60;
+    const START_MIN  = START_HOUR * 60;  // 420
+    const END_MIN    = END_HOUR   * 60;  // 1440
 
-    // Rule policy
+    // Regels
     const LONG_BLOCK_MIN = 50;
     const BREAK_GAP_MIN  = 5;
 
@@ -543,8 +536,8 @@
       const h = Math.floor(min/60), m = min%60;
       return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
     }
-    function snap5(min){ return Math.round(min/5) * 5; }
 
+    // Bewaar modaldraft bij verlaten pagina
     function saveAllState() {
       try {
         const wk = weekStartInput.value || isoDate(mondayOf(new Date()));
@@ -749,7 +742,10 @@
     const monday = mondayOf(today);
     weekStartInput.value = savedWeekStart || isoDate(monday);
 
-    function loadWeek(weekISO) { try { return JSON.parse(localStorage.getItem(SKEY_WEEK(weekISO))) || []; } catch { return []; } }
+    function loadWeek(weekISO) {
+      try { return JSON.parse(localStorage.getItem(SKEY_WEEK(weekISO))) || []; }
+      catch { return []; }
+    }
     function saveWeek(weekISO, blocks) {
       localStorage.setItem(SKEY_WEEK(weekISO), JSON.stringify(blocks));
       renderSubjectsUI();
@@ -770,10 +766,23 @@
       return perSubject;
     }
 
+    // Volgende Stud ieblok-nummer = max bestaand nummer + 1 (per week/subject)
+    function nextStudyBlockNumber(subjectId) {
+      const blocks = getBlocks().filter(b => b.subjectId === subjectId);
+      let maxN = 0;
+      for (const b of blocks) {
+        const m = /^Studieblok\s+(\d+)/i.exec(b.title || "");
+        if (m) maxN = Math.max(maxN, parseInt(m[1], 10));
+      }
+      return maxN + 1;
+    }
+    function nextStudyBlockTitle(subjectId) {
+      return `Studieblok ${nextStudyBlockNumber(subjectId)}`;
+    }
+
     function renderWeekGrid() {
       weekGrid.innerHTML = "";
 
-      // Header
       const head = document.createElement('div');
       head.className = 'row header';
       const hours = document.createElement('div');
@@ -789,11 +798,10 @@
       });
       weekGrid.appendChild(head);
 
-      // Body
       const body = document.createElement('div');
       body.className = 'body';
 
-      // Hour rail
+      // Urenrail (07:00 → 24:00)
       const hr = document.createElement('div');
       hr.className = 'hours-col';
       hr.style.height = ((END_MIN - START_MIN) * PX_PER_MIN) + 'px';
@@ -814,7 +822,7 @@
         col.style.height = ((END_MIN - START_MIN) * PX_PER_MIN) + 'px';
         col.dataset.day = String(day);
 
-        // Background hour lines
+        // achtergrond uurlijnen
         for (let h = START_HOUR; h <= END_HOUR; h++) {
           const line = document.createElement('div');
           line.className = 'hour-line';
@@ -822,16 +830,16 @@
           col.appendChild(line);
         }
 
-        // Click-to-create on empty space
-        col.addEventListener('click', (e) => {
-          // ignore clicks on blocks or their children
-          if (e.target.closest('.study-block')) return;
+        // Snel plannen: dubbelklik in lege ruimte
+        col.addEventListener('dblclick', (e) => {
+          if (e.target.closest('.study-block')) return; // niet op een blok zelf
           const rect = col.getBoundingClientRect();
           const y = e.clientY - rect.top;
-          const startMin = snap5(START_MIN + Math.max(0, y / PX_PER_MIN));
-          // prefill with day & start
+          const minFromStart = Math.max(0, Math.round((y / PX_PER_MIN) / 5) * 5);
+          const startMin = START_MIN + Math.min(minFromStart, END_MIN - START_MIN - DEFAULT_BLOCK_MIN);
+          const defaultSubject = (subjects.find(s => !s.hobby) || subjects[0] || {}).id || '';
           openBlockModal({
-            subjectId: subjects.find(s=>!s.hobby)?.id || subjects[0]?.id || '',
+            subjectId: defaultSubject,
             day,
             startMin,
             duration: DEFAULT_BLOCK_MIN,
@@ -842,7 +850,7 @@
           });
         });
 
-        // Render blocks
+        // blocks
         blocks.filter(b => b.day === day).forEach(b => {
           const sub = subjects.find(s => s.id === b.subjectId);
 
@@ -858,10 +866,8 @@
           const truncatedTop = bStart < START_MIN;
           const truncatedBot = bEnd   > END_MIN;
 
-          const block = document.createElement('button');
-          block.type = "button";
+          const block = document.createElement('div'); // geen button → checkbox binnenin is oké
           block.className = 'study-block';
-          if (b.done) block.classList.add('done');
           block.style.top = topPx + 'px';
           block.style.height = heightPx + 'px';
           block.style.background = sub ? sub.color : BRAND.secondary;
@@ -869,15 +875,11 @@
                         (truncatedTop ? " • (Begint vóór 07:00)" : "") +
                         (truncatedBot ? " • (Eindigt na 24:00)" : "");
 
-          // Content
+          // Inhoud
           if (sub && sub.hobby) {
             block.innerHTML = `
               <span class="sb-time">${minutesToHHMM(b.startMin)} • ${b.duration}m</span>
               <span class="sb-name">${sub.name}</span>
-              <label class="sb-done" title="Markeer als klaar">
-                <input class="sb-done-input" type="checkbox" data-id="${b.id}" ${b.done?'checked':''}>
-                <span>klaar</span>
-              </label>
             `;
           } else {
             block.innerHTML = `
@@ -890,18 +892,29 @@
               ${b.technique ? `<span class="sb-tech">${b.technique}</span>` : ''}
               ${b.desc ? `<span class="sb-desc">${b.desc}</span>` : ''}
               ${b.note ? `<span class="sb-note">${b.note}</span>` : ''}
-              <label class="sb-done" title="Markeer als klaar">
-                <input class="sb-done-input" type="checkbox" data-id="${b.id}" ${b.done?'checked':''}>
-                <span>klaar</span>
-              </label>
             `;
+
+            // Done-toggle (alleen niet-hobby)
+            const doneToggle = document.createElement('input');
+            doneToggle.type = 'checkbox';
+            doneToggle.className = 'sb-done';
+            doneToggle.checked = !!b.done;
+            doneToggle.title = 'Markeer als afgewerkt';
+            doneToggle.addEventListener('click', (ev) => ev.stopPropagation());
+            doneToggle.addEventListener('change', () => {
+              const all = getBlocks();
+              const idx = all.findIndex(x => x.id === b.id);
+              if (idx > -1) {
+                all[idx].done = doneToggle.checked;
+                setBlocks(all); // herteken met juiste grijze kleur
+              }
+            });
+            block.appendChild(doneToggle);
+            if (b.done) block.classList.add('done');
           }
 
-          // Edit on block (but NOT on checkbox)
-          block.addEventListener('click', (ev) => {
-            if (ev.target && (ev.target.closest('.sb-done') || ev.target.classList?.contains('sb-done-input'))) return;
-            editBlock(b.id);
-          });
+          // Klik op blok = bewerken
+          block.addEventListener('click', () => editBlock(b.id));
 
           col.appendChild(block);
         });
@@ -910,20 +923,6 @@
       });
 
       weekGrid.appendChild(body);
-
-      // Delegate: toggle done
-      weekGrid.addEventListener('click', (e) => {
-        if (e.target && e.target.classList.contains('sb-done-input')) {
-          e.stopPropagation();
-          const id = e.target.getAttribute('data-id');
-          const blocks = getBlocks();
-          const b = blocks.find(x => x.id === id);
-          if (b) {
-            b.done = !!e.target.checked;
-            setBlocks(blocks);
-          }
-        }
-      }, { once: true }); // re-attached each render
     }
 
     weekStartInput.addEventListener('change', () => {
@@ -940,7 +939,7 @@
     });
 
     // ===========================
-    // Add/Edit blocks + rules
+    // Add/Edit blocks + regels
     // ===========================
     const blockModal = qs('#blockModal');
     const blockForm  = qs('#blockForm');
@@ -981,21 +980,11 @@
     function clearBlockDraft() { localStorage.removeItem(SKEY_BLOCK_DRAFT); }
 
     ['#blockSubject','#blockTitle','#blockDesc','#blockTechnique','#blockDay','#blockStart','#blockDur','#blockNote']
-      .forEach(sel => qs(sel).addEventListener('input', saveBlockDraft));
+      .forEach(sel => qs(sel)?.addEventListener('input', saveBlockDraft));
 
-    // Auto-title "Studieblok X" for non-hobby
-    function nextStudyBlockTitle(subjectId) {
-      const count = getBlocks().filter(b => b.subjectId === subjectId).length;
-      return `Studieblok ${count + 1}`;
-    }
-    function maybeUpdateAutoTitle(subjectId) {
-      if (!subjectId || isHobby(subjectId)) return;
-      const inp = qs('#blockTitle');
-      // Update only if empty or already an auto title pattern
-      if (!inp.value.trim() || /^Studieblok \d+$/.test(inp.value.trim())) {
-        inp.value = nextStudyBlockTitle(subjectId);
-      }
-    }
+    // Titel auto-generator met "auto" bewaking
+    let blockTitleAuto = true;
+    qs('#blockTitle').addEventListener('input', () => { blockTitleAuto = false; });
 
     function toggleHobbyFields(subjectId) {
       const hobby = isHobby(subjectId);
@@ -1006,8 +995,12 @@
         qs('#blockDesc').value = '';
         qs('#blockTechnique').value = '';
         qs('#blockNote').value = '';
+        blockTitleAuto = false;
       } else {
-        maybeUpdateAutoTitle(subjectId);
+        // indien nog auto → zet juiste nummer
+        if (blockTitleAuto) {
+          qs('#blockTitle').value = nextStudyBlockTitle(subjectId);
+        }
       }
       updateDescCount();
     }
@@ -1017,6 +1010,7 @@
       blockForm.reset();
       qs('#blockDur').value = DEFAULT_BLOCK_MIN;
       descCount.textContent = '0/25 woorden';
+      blockTitleAuto = true;
 
       const draft = !prefill ? getBlockDraft() : null;
 
@@ -1039,7 +1033,9 @@
 
         const hobby = isHobby(data.subjectId);
         if (!hobby) {
-          qs('#blockTitle').value     = data.title || nextStudyBlockTitle(data.subjectId);
+          const autoTitle = data.title || nextStudyBlockTitle(data.subjectId);
+          qs('#blockTitle').value     = autoTitle;
+          blockTitleAuto = /^Studieblok\s+\d+$/i.test(autoTitle);
           qs('#blockDesc').value      = data.desc  || '';
           qs('#blockTechnique').value = data.technique || '';
           qs('#blockNote').value      = data.note || '';
@@ -1048,6 +1044,7 @@
           qs('#blockDesc').value = '';
           qs('#blockTechnique').value = '';
           qs('#blockNote').value = '';
+          blockTitleAuto = false;
         }
         updateDescCount();
 
@@ -1055,22 +1052,28 @@
         else delete blockForm.dataset.editId;
       } else {
         delete blockForm.dataset.editId;
-        const sid = qs('#blockSubject').value;
+        const sid = qs('#blockSubject').value || (subjects[0]?.id || '');
         if (sid && !isHobby(sid)) {
           qs('#blockTitle').value = nextStudyBlockTitle(sid);
+          blockTitleAuto = true;
         }
       }
 
       toggleHobbyFields(qs('#blockSubject').value);
       openModal(blockModal);
     }
+
     openAddBlockBtn.addEventListener('click', () => openBlockModal());
     qs('#blockSubject').addEventListener('change', (e) => {
+      // Als titel "auto" is, hernummeren bij vak-wissel
       toggleHobbyFields(e.target.value);
-      maybeUpdateAutoTitle(e.target.value);
+      if (blockTitleAuto && !isHobby(e.target.value)) {
+        qs('#blockTitle').value = nextStudyBlockTitle(e.target.value);
+      }
+      saveBlockDraft();
     });
 
-    // Rules helpers
+    // ——— Helpers voor regels ———
     function touchingWithin(a, b, maxGapMin) {
       if (!a || !b) return false;
       const aEnd = a.startMin + a.duration;
@@ -1080,31 +1083,42 @@
       const gap = bStart - aEnd;
       return Math.abs(gap) <= maxGapMin;
     }
+
     function continuousChainMinutes(center, blocks, maxGapMin) {
       const sameDay = blocks.filter(b => b.day === center.day)
                             .concat([center])
                             .sort((a,b) => a.startMin - b.startMin);
       const idx = sameDay.findIndex(b => b === center);
       let total = center.duration;
+
       let i = idx - 1;
       let currentStart = center.startMin;
       while (i >= 0) {
         const prev = sameDay[i];
         const prevEnd = prev.startMin + prev.duration;
         const gap = currentStart - prevEnd;
-        if (gap <= maxGapMin) { total += prev.duration; currentStart = prev.startMin; i--; }
-        else break;
+        if (gap <= maxGapMin) {
+          total += prev.duration;
+          currentStart = prev.startMin;
+          i--;
+        } else break;
       }
+
       let j = idx + 1;
       let currentEnd = center.startMin + center.duration;
       while (j < sameDay.length) {
         const next = sameDay[j];
         const gap = next.startMin - currentEnd;
-        if (gap <= maxGapMin) { total += next.duration; currentEnd = next.startMin + next.duration; j++; }
-        else break;
+        if (gap <= maxGapMin) {
+          total += next.duration;
+          currentEnd = next.startMin + next.duration;
+          j++;
+        } else break;
       }
+
       return total;
     }
+
     function checkRules(newBlock, blocks) {
       const sorted = [...blocks, newBlock].sort((a,b) => (a.day - b.day) || (a.startMin - b.startMin));
       const idx = sorted.findIndex(b => b === newBlock);
@@ -1112,6 +1126,7 @@
       const next = sorted[idx+1];
 
       const msg = [];
+
       const THRESH_ADJ = 30;
       if (prev && prev.subjectId === newBlock.subjectId && touchingWithin(prev,newBlock,THRESH_ADJ)) {
         msg.push("Interleaving: Je plant twee blokken voor hetzelfde vak direct na elkaar.");
@@ -1122,17 +1137,24 @@
 
       const MIN_SPACING = 12*60;
       const sameDayBlocks = blocks.filter(b => b.day===newBlock.day && b.subjectId===newBlock.subjectId);
-      if (sameDayBlocks.length >= 2) msg.push("Spaced practice: Veel blokken voor hetzelfde vak op één dag (blocked practice).");
+      if (sameDayBlocks.length >= 2) {
+        msg.push("Spaced practice: Veel blokken voor hetzelfde vak op één dag (blocked practice).");
+      }
       const closeSame = blocks.some(b => b.subjectId===newBlock.subjectId && b.day===newBlock.day &&
         Math.abs(b.startMin - newBlock.startMin) < MIN_SPACING);
-      if (closeSame) msg.push("Spaced practice: Er zit minder dan ~12 uur tussen blokken voor hetzelfde vak.");
+      if (closeSame) {
+        msg.push("Spaced practice: Er zit minder dan ~12 uur tussen blokken voor hetzelfde vak.");
+      }
 
       if (newBlock.duration >= LONG_BLOCK_MIN) {
         msg.push("Pauze: Dit blok duurt ≥ 50 min. Plan een korte pauze (5–10 min).");
       } else {
         const chain = continuousChainMinutes(newBlock, blocks, BREAK_GAP_MIN);
-        if (chain >= LONG_BLOCK_MIN) msg.push("Pauze: Je hebt ≥ 50 min aaneengesloten studie gepland. Neem tussendoor 5–10 min pauze.");
+        if (chain >= LONG_BLOCK_MIN) {
+          msg.push("Pauze: Je hebt ≥ 50 min aaneengesloten studie gepland. Neem tussendoor 5–10 min pauze.");
+        }
       }
+
       return msg;
     }
 
@@ -1173,12 +1195,7 @@
       const subjObj   = subjects.find(x => x.id === sub);
       const hobby     = !!(subjObj && subjObj.hobby);
 
-      // Ensure auto title is correct right before saving (for non-hobby)
-      let title     = hobby ? '' : qs('#blockTitle').value.trim();
-      if (!hobby && (!title || /^Studieblok \d+$/.test(title))) {
-        title = nextStudyBlockTitle(sub);
-      }
-
+      let title     = hobby ? '' : (qs('#blockTitle').value.trim() || nextStudyBlockTitle(sub));
       let desc      = hobby ? '' : qs('#blockDesc').value.trim();
       let technique = hobby ? '' : qs('#blockTechnique').value.trim();
       let note      = hobby ? '' : qs('#blockNote').value.trim();
@@ -1206,7 +1223,7 @@
       if (!b) return;
       openBlockModal(b);
 
-      // Quick delete in edit
+      // Quick delete
       const existing = qs('#blockDelete');
       if (existing) existing.remove();
       const delBtn = document.createElement('button');
@@ -1227,8 +1244,13 @@
     // ===========================
     // Dials & sliders (Reflect) + storage
     // ===========================
-    function loadReflect() { try { return JSON.parse(localStorage.getItem(SKEY_REFLECT)) || {}; } catch { return {}; } }
-    function saveReflect(data) { localStorage.setItem(SKEY_REFLECT, JSON.stringify(data)); }
+    function loadReflect() {
+      try { return JSON.parse(localStorage.getItem(SKEY_REFLECT)) || {}; }
+      catch { return {}; }
+    }
+    function saveReflect(data) {
+      localStorage.setItem(SKEY_REFLECT, JSON.stringify(data));
+    }
     const reflect = loadReflect();
 
     const dialInputs = qsa('input[type="range"][data-dial]');
@@ -1237,14 +1259,20 @@
       if (!face) return;
       face.style.background = `conic-gradient(${BRAND.secondary} ${val*3.6}deg, #E8EEF6 ${val*3.6}deg)`;
       face.querySelector?.('span')?.remove();
-      const lbl = document.createElement('span'); lbl.textContent = `${val}`; face.appendChild(lbl);
+      const lbl = document.createElement('span');
+      lbl.textContent = `${val}`;
+      face.appendChild(lbl);
     }
     dialInputs.forEach(inp => {
       const key = `dial_${inp.dataset.dial}`;
       const val = reflect[key] ?? Number(inp.value);
       inp.value = val;
       updateDialFace(inp.dataset.dial, Number(val));
-      inp.addEventListener('input', () => { updateDialFace(inp.dataset.dial, Number(inp.value)); reflect[key] = Number(inp.value); saveReflect(reflect); });
+      inp.addEventListener('input', () => {
+        updateDialFace(inp.dataset.dial, Number(inp.value));
+        reflect[key] = Number(inp.value);
+        saveReflect(reflect);
+      });
     });
 
     const sTheory = qs('#s-theory');
@@ -1273,14 +1301,20 @@
     drawQuadDot();
 
     // ===========================
-    // Important dates
+    // Belangrijke data
     // ===========================
     const datesForm = qs('#datesForm');
     const datesList = qs('#datesList');
     const clearDatesBtn = qs('#clearDates');
 
-    function loadDates() { try { return JSON.parse(localStorage.getItem(SKEY_DATES)) || []; } catch { return []; } }
-    function saveDates(items) { localStorage.setItem(SKEY_DATES, JSON.stringify(items)); renderDates(); }
+    function loadDates() {
+      try { return JSON.parse(localStorage.getItem(SKEY_DATES)) || []; }
+      catch { return []; }
+    }
+    function saveDates(items) {
+      localStorage.setItem(SKEY_DATES, JSON.stringify(items));
+      renderDates();
+    }
     let dates = loadDates();
 
     if (dates.length === 0) {
@@ -1329,7 +1363,10 @@
       const del = e.target.getAttribute('data-del');
       const ed  = e.target.getAttribute('data-edit');
       const doneId = e.target.getAttribute('data-done');
-      if (del) { dates = dates.filter(x => x.id !== del); saveDates(dates); }
+      if (del) {
+        dates = dates.filter(x => x.id !== del);
+        saveDates(dates);
+      }
       if (ed) {
         const d = dates.find(x => x.id === ed);
         if (!d) return;
@@ -1348,11 +1385,14 @@
     });
 
     clearDatesBtn.addEventListener('click', () => {
-      if (confirm("Alle data wissen?")) { dates = []; saveDates(dates); }
+      if (confirm("Alle data wissen?")) {
+        dates = [];
+        saveDates(dates);
+      }
     });
 
     // ===========================
-    // Export PDF (same as before; split by active tab)
+    // Export PDF — (zelfde als vorige werkende versie)
     // ===========================
     const exportBtn = qs('#exportBtn');
 
@@ -1400,8 +1440,7 @@
           pdf.addImage(dataUrl, 'PNG', 16, 8, w, h);
           textX = 16 + w + 10;
         }
-      } catch (e) { /* ignore */ }
-
+      } catch (e) {}
       pdf.setTextColor(255,255,255);
       pdf.setFont('helvetica','bold'); pdf.setFontSize(14);
       pdf.text(titleText, textX, 28);
@@ -1458,18 +1497,21 @@
       pdf.save(`${(name||'edUP')}-studie.pdf`);
     }
 
+    // Split export by active tab
     exportBtn.addEventListener('click', async () => {
       const isPlannerActive = panelPlanner.classList.contains('active');
       const nm = (prompt("Naam (op PDF) – optioneel:", "") || "").trim();
       await exportPDF(isPlannerActive, !isPlannerActive, nm);
     });
+
+    // Explicit reflect export button
     qs('#exportReflect').addEventListener('click', async () => {
       const nm = (prompt("Naam (op PDF) – optioneel:", "") || "").trim();
       await exportPDF(false, true, nm);
     });
 
     // ===========================
-    // Help modal + tips slider (round dots already fixed by CSS)
+    // Help modal + tips slider
     // ===========================
     const helpModal = qs('#helpModal');
     qs('#helpFab').addEventListener('click', () => { openModal(helpModal); startTipsAuto(); });
@@ -1479,13 +1521,31 @@
     const tipLis = qsa('li', tipsList);
 
     const TIP_ICONS = [
-      `<svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="#1A224C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18v1a3 3 0 0 0 6 0v-1"/><path d="M12 2a7 7 0 0 0-4 12.9V16h8v-1.1A7 7 0 0 0 12 2z"/><path d="M2 12h2M20 12h2M12 2v2M5 5l1.5 1.5M19 5l-1.5 1.5" stroke="#5CC2AB"/></svg>`,
-      `<svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="#1A224C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="12" height="10" rx="2"/><rect x="9" y="8" width="12" height="10" rx="2" stroke="#5CC2AB"/></svg>`,
-      `<svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="#1A224C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18" stroke="#5CC2AB"/></svg>`,
-      `<svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="#1A224C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V6a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 9h8M8 12h5" stroke="#5CC2AB"/></svg>`,
-      `<svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="#1A224C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h10a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3V4z"/><path d="M14 4h6v16a3 3 0 0 1-3 3h-6" stroke="#5CC2AB"/></svg>`
+      `<svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="#1A224C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+         <path d="M9 18v1a3 3 0 0 0 6 0v-1"/><path d="M12 2a7 7 0 0 0-4 12.9V16h8v-1.1A7 7 0 0 0 12 2z"/>
+         <path d="M2 12h2M20 12h2M12 2v2M5 5l1.5 1.5M19 5l-1.5 1.5" stroke="#5CC2AB"/>
+       </svg>`,
+      `<svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="#1A224C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+         <rect x="3" y="6" width="12" height="10" rx="2"/>
+         <rect x="9" y="8" width="12" height="10" rx="2" stroke="#5CC2AB"/>
+       </svg>`,
+      `<svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="#1A224C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+         <rect x="3" y="3" width="18" height="18" rx="3"/>
+         <path d="M3 9h18M3 15h18M9 3v18M15 3v18" stroke="#5CC2AB"/>
+       </svg>`,
+      `<svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="#1A224C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+         <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V6a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
+         <path d="M8 9h8M8 12h5" stroke="#5CC2AB"/>
+       </svg>`,
+      `<svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="#1A224C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+         <path d="M4 4h10a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3V4z"/>
+         <path d="M14 4h6v16a3 3 0 0 1-3 3h-6" stroke="#5CC2AB"/>
+       </svg>`
     ];
-    tipLis.forEach((li, i) => { li.insertAdjacentHTML('afterbegin', TIP_ICONS[i % TIP_ICONS.length]); });
+
+    tipLis.forEach((li, i) => {
+      li.insertAdjacentHTML('afterbegin', TIP_ICONS[i % TIP_ICONS.length]);
+    });
 
     tipsDots.innerHTML = tipLis.map((_, i) =>
       `<button class="dot" role="tab" aria-label="Tip ${i+1}"></button>`
@@ -1493,23 +1553,39 @@
     const dotBtns = [...tipsDots.querySelectorAll('.dot')];
 
     let tipIndex = 0, tipTimer = null;
-    function showTip(i) { tipLis.forEach((li, idx) => li.classList.toggle('active', idx === i)); dotBtns.forEach((b, idx) => b.classList.toggle('active', idx === i)); tipIndex = i; }
+
+    function showTip(i) {
+      tipLis.forEach((li, idx) => li.classList.toggle('active', idx === i));
+      dotBtns.forEach((b, idx) => b.classList.toggle('active', idx === i));
+      tipIndex = i;
+    }
     function nextTip() { showTip((tipIndex + 1) % tipLis.length); }
     function startTipsAuto() { stopTipsAuto(); tipTimer = setInterval(nextTip, 6000); }
     function stopTipsAuto()  { if (tipTimer) clearInterval(tipTimer), tipTimer = null; }
-    tipsDots.addEventListener('click', (e) => { if (e.target.classList.contains('dot')) { const i = [...dotBtns].indexOf(e.target); if (i >= 0) { showTip(i); startTipsAuto(); } } });
+
+    tipsDots.addEventListener('click', (e) => {
+      if (e.target.classList.contains('dot')) {
+        const i = [...dotBtns].indexOf(e.target);
+        if (i >= 0) { showTip(i); startTipsAuto(); }
+      }
+    });
+
     showTip(0);
 
-    // Close modals on overlay click (and stop tips auto)
+    // ——— sluiting via overlay + [data-close]
     qsa('.modal').forEach(m => {
       m.addEventListener('click', (e) => {
         if (e.target === m) {
           if (m.id === 'blockModal') clearBlockDraft();
-          if (m.id === 'helpModal')  { try { stopTipsAuto(); } catch {} }
           closeModal(m);
         }
       });
     });
+    qsa('[data-close]').forEach(btn => btn.addEventListener('click', () => {
+      const m = btn.closest('.modal');
+      if (m && m.id === 'blockModal') clearBlockDraft();
+      closeModal(m);
+    }));
 
     // ===========================
     // Init
@@ -1518,25 +1594,6 @@
     renderLegend();
     renderWeekGrid();
     if (seededNow) { renderSubjectsUI(); renderLegend(); fillSubjectSelect(); }
-
-
-    // ——— Universal [data-close] handler for all modals (buttons + "×") ———
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('[data-close]');
-  if (!btn) return;
-  const modal = btn.closest('.modal');
-  if (!modal) return;
-
-  // Modal-specific cleanup
-  if (modal.id === 'blockModal') { try { clearBlockDraft(); } catch {} }
-  if (modal.id === 'helpModal')  { try { stopTipsAuto(); } catch {} }
-
-  closeModal(modal);
-});
   </script>
 </body>
 </html>
-
-
-
-
