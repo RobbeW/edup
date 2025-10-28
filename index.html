@@ -436,24 +436,22 @@
 <div class="row two">
   <div>
     <label for="blockStart">Starttijd</label>
-    <input
-      id="blockStart"
-      type="time"
-      step="300"                 <!-- 300s = 5 min -->
-      min="07:00"                <!-- eerste geldige tick -->
-      max="23:55"                <!-- laatste geldige tick -->
-      value="16:00"
-      required
-      inputmode="numeric"
-      pattern="^([01]\\d|2[0-3]):([0-5][05])$"  <!-- :00,:05,...,:55 -->
-      title="Gebruik stappen van 5 minuten (bv. 16:00, 16:05, …)"
-    >
+    <input id="blockStart"
+           type="time"
+           min="07:00"
+           max="23:55"
+           step="300"
+           value="16:00"
+           required
+           inputmode="numeric">
   </div>
   <div>
     <label for="blockDur">Duur (min)</label>
     <input id="blockDur" type="number" min="15" step="5" value="25" required>
   </div>
 </div>
+
+
 
 
         <div id="rowNote" class="row">
@@ -579,7 +577,7 @@
     // ===========================
     // Brand & constants
     // ===========================
-    const BRAND = { name: "edUP!", primary: "#1A224C", secondary: "#5CC2AB" };
+    const BRAND = { name: "", primary: "#1A224C", secondary: "#5CC2AB" };
     const PX_PER_MIN = 2; // iets groter voor leesbaarheid
     const DEFAULT_BLOCK_MIN = 25;  // standaardduur van een studieblok (in minuten)
 
@@ -622,26 +620,36 @@
     function clamp(n, lo, hi){ return Math.min(Math.max(n, lo), hi); }
     function snapToStep(minutes, step=5){ return Math.round(minutes/step)*step; }
 
-// (NL) Zorgt dat #blockStart altijd netjes "snapt" op 5 minuten en binnen bereik valt
+
 function applyTimeStepConstraints() {
   const input = document.getElementById('blockStart');
   if (!input) return;
 
-  // Align met UI venster (07:00–24:00 → laatste tick 23:55)
-  input.step = 300;
+
+  input.type = 'time';
   input.min  = '07:00';
-  const maxMinutes = 24*60 - 5; // 23:55
-  input.max  = minutesToHHMM(maxMinutes);
+  input.max  = '23:55';
+  input.step = '300'; // 5 minuten
+
+  const MAX_MIN = 24*60 - 5;  // 23:55
 
   const snapAndFix = () => {
-    const raw = input.value || input.min || '07:00';
-    let m = parseTimeToMinutes(raw);
-    m = clamp(snapToStep(m, 5), 7*60, maxMinutes);
-    input.value = minutesToHHMM(m);
+    if (!input.value) { input.value = '16:00'; return; }
+
+    const mins = parseTimeToMinutes(input.value);
+    if (!Number.isFinite(mins)) { input.value = '16:00'; return; }
+
+    const snapped = clamp(snapToStep(mins, 5), 7*60, MAX_MIN);
+    input.value = minutesToHHMM(snapped);
   };
 
+
+  input.addEventListener('input',  snapAndFix);
   input.addEventListener('change', snapAndFix);
   input.addEventListener('blur',   snapAndFix);
+
+
+  snapAndFix();
 }
     function minutesToHHMM(min) {
       const h = Math.floor(min/60), m = min%60;
@@ -1185,7 +1193,7 @@ function makeYToMinutes(cumulativeTop, hourScale) {
       blockForm.reset();
       descCount.textContent = '0/25 woorden';
 
-      // Veilige defaults + merge prefill
+  
       const data = {
         subjectId: subjects[0]?.id || "",
         day: 1,
@@ -1198,10 +1206,13 @@ function makeYToMinutes(cumulativeTop, hourScale) {
         ...(prefill || {})
       };
 
-      // Vullen
+
       qs('#blockSubject').value   = data.subjectId;
       qs('#blockDay').value       = String(data.day);
-      qs('#blockStart').value     = minutesToHHMM(data.startMin);
+      {
+  const snapped = clamp(snapToStep(data.startMin, 5), 7*60, 24*60 - 5);
+  qs('#blockStart').value = minutesToHHMM(snapped);
+}
       qs('#blockDur').value       = data.duration;
 
       const hobby = isHobby(data.subjectId);
@@ -1633,7 +1644,8 @@ function makeYToMinutes(cumulativeTop, hourScale) {
         if (!first) pdf.addPage();
         first = false;
 
-        const fullTitle = `${BRAND.name} — ${title}${name ? ' — ' + name : ''}`;
+        const docTitle = 'Studieplanner';
+        const fullTitle = name ? `${docTitle} — ${name}` : docTitle;
         await drawHeaderWithLogo(pdf, fullTitle);
 
         const margin = 28;
@@ -1751,6 +1763,7 @@ if (seededNow) { renderSubjectsUI(); renderLegend(); fillSubjectSelect(); }
   </script>
 </body>
 </html>
+
 
 
 
