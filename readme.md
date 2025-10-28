@@ -3,6 +3,8 @@
 **Auteur: Robbe Wulgaert · aiindeklas.be / robbewulgaert.be**
 © 2025 Robbe Wulgaert
 
+Demo: [https://robbew.github.io/edup/](https://robbew.github.io/edup/) 
+
 
 # 🎯 Doel
 
@@ -84,4 +86,5 @@ Combineer met rubrieken of korte formatieve checks (bv. “welk blok wisselde je
 
 © 2025 Robbe Wulgaert, aiindeklas.be / robbewulgaert.be
 Alle rechten voorbehouden.
+
 Niet herdistribueren of gebruiken zonder schriftelijke toestemming van de auteur.
