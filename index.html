@@ -1666,7 +1666,7 @@ function makeYToMinutes(cumulativeTop, hourScale) {
 
     exportBtn.addEventListener('click', async () => {
       const isPlannerActive = panelPlanner.classList.contains('active');
-      const nm = (prompt("Naam (op PDF) – optioneel:", "") || "").trim();
+      const nm = (prompt("Vul jouw volledige naam in:", "") || "").trim();
       await exportPDF(isPlannerActive, !isPlannerActive, nm);
     });
 
@@ -1763,6 +1763,7 @@ if (seededNow) { renderSubjectsUI(); renderLegend(); fillSubjectSelect(); }
   </script>
 </body>
 </html>
+
 
 
 
