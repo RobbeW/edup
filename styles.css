@@ -114,6 +114,10 @@ input[type="color"]{ padding:0; }
 }
 .dial input{ width:100%; }
 .slider-row{ display:grid; gap:6px; }
+.dial-face {
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+}
 
 .quadrant{
   position:relative; height:280px; background:
@@ -157,3 +161,10 @@ input[type="color"]{ padding:0; }
 }
 .theory{ margin:0; padding-left:18px; }
 .check{ display:flex; align-items:center; gap:10px; margin:6px 0; }
+
+.done-toggle {
+  position:absolute;
+  top:4px;
+  right:4px;
+  transform:scale(1.2);
+}
