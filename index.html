@@ -832,8 +832,8 @@ const END_MIN    = END_HOUR   * 60;
 
 // === Dynamic hour scaling — must be defined BEFORE computeHourPxPerMin() ===
 const SCALE_EMPTY = 0.5; // px/min when an hour has no blocks
-const SCALE_ONE   = 3;   // px/min when an hour has 1 block (max across days)
-const SCALE_MULTI = 6;   // px/min when an hour has 2+ blocks (max across days)
+const SCALE_ONE   = 4;   // px/min when an hour has 1 block (max across days)
+const SCALE_MULTI = 8;   // px/min when an hour has 2+ blocks (max across days)
 
     
 function computeHourPxPerMin(blocks) {
@@ -1687,6 +1687,7 @@ function makeYToMinutes(cumulativeTop, hourScale) {
   </script>
 </body>
 </html>
+
 
 
 
