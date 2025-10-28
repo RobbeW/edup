@@ -168,3 +168,6 @@ input[type="color"]{ padding:0; }
   right:4px;
   transform:scale(1.2);
 }
+
+.legend { display: none !important; }
+
