@@ -1,0 +1,1549 @@
+<!--
+  Author: Robbe Wulgaert / edUP!
+  Copyright 2025 - ENKEL GEBRUIK MITS EXPLICIETE TOELATING EN LICENTIE
+-->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#1A224C" />
+  <title>edUP! Studieplanner & Reflectie</title>
+
+  <link rel="icon" type="image/svg+xml" href="media/edup_academy.svg">
+  <link rel="alternate icon" type="image/png" href="media/edup_academy.png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap">
+
+  <!-- Basestyles -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Kleine CSS-patches die de bestaande styles aanvullen/overriden -->
+  <style>
+    /* ——— Overzichtlijst: wrapping & geen overschot ——— */
+    .subjects { display: grid; gap: 8px; }
+    .subject-item { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+    .subject-item .dot { width:10px; height:10px; border-radius:999px; flex:0 0 auto; }
+    .subject-item .s-name { flex:1 1 120px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .subject-item .s-target, .subject-item .s-remain { flex:0 0 auto; white-space:nowrap; }
+    .subject-item .btn { flex:0 0 auto; }
+    .tag { font-size:.75em; background:#E8EEF6; color:#1A224C; padding:2px 6px; border-radius:6px; margin-left:6px; }
+
+    /* ——— Blokkaartjes ——— */
+    .study-block { text-align:left; }
+    .study-block .sb-time { display:block; font-weight:700; }
+    .study-block .sb-name { display:block; }
+    .study-block .sb-title,
+    .study-block .sb-tech,
+    .study-block .sb-desc,
+    .study-block .sb-note {
+      display:block;
+      overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+      opacity:.95;
+    }
+    .study-block .sb-tech { font-size:0.85em; opacity:.8; }
+    .study-block .sb-desc { font-size:0.9em; }
+    .study-block .sb-note { font-size:0.85em; opacity:.75; }
+
+    /* ——— Omschrijving teller ——— */
+    .hint { font-size:.85em; color:#667; }
+    .hint.error { color:#b00020; }
+
+    /* ——— Check-row align ——— */
+    .check-row .check { display:flex; align-items:center; gap:8px; }
+
+    /* ——— Quadrant met grid, assen en dot ——— */
+    .quadrant {
+      position:relative;
+      background:#fff;
+      border:1px solid #d9e1ec;
+      border-radius:12px;
+      min-height:220px;
+      background-image:
+        linear-gradient(to right, transparent 50%, #c2ccdd 50%, #c2ccdd calc(50% + 2px), transparent calc(50% + 2px)),
+        linear-gradient(to bottom, transparent 50%, #c2ccdd 50%, #c2ccdd calc(50% + 2px), transparent calc(50% + 2px)),
+        repeating-linear-gradient(to right, #e8eef6 0, #e8eef6 1px, transparent 1px, transparent 10%),
+        repeating-linear-gradient(to bottom, #e8eef6 0, #e8eef6 1px, transparent 1px, transparent 10%);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+    }
+    .quadrant::before {
+      content:"";
+      position:absolute;
+      left:calc(var(--qx, .5) * 100%);
+      top:calc(var(--qy, .5) * 100%);
+      transform:translate(-50%,-50%);
+      width:14px; height:14px; border-radius:50%;
+      border:2px solid #1A224C; background:#5CC2AB;
+      box-shadow:0 0 0 2px #fff;
+    }
+    .quadrant .axis-label {
+      position:absolute; font-size:.85em; color:#4a5877; pointer-events:none;
+      text-shadow:0 1px 0 #fff;
+    }
+    .quadrant .axis-label.x { bottom:6px; left:50%; transform:translateX(-50%); }
+    .quadrant .axis-label.y { top:50%; left:8px; transform:translateY(-50%) rotate(-90deg); transform-origin:left top; }
+
+    /* ——— Scrollbare modals ——— */
+    .modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:grid; place-items:center; padding:16px; }
+    .modal[hidden] { display:none; }
+    .modal-box {
+      width:min(680px, 92vw);
+      max-height:90vh;
+      background:#fff; border-radius:14px; box-shadow:0 12px 40px rgba(0,0,0,.2);
+      display:flex; flex-direction:column; overflow:hidden;
+    }
+    .modal-head {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 16px; border-bottom:1px solid #e8eef6; background:#fff; position:sticky; top:0; z-index:1;
+    }
+    .modal-body {
+      padding:14px 16px; overflow:auto; -webkit-overflow-scrolling:touch;
+    }
+    .modal-actions {
+      display:flex; gap:8px; justify-content:flex-end;
+      padding:12px 16px; border-top:1px solid #e8eef6; background:#fff; position:sticky; bottom:0; z-index:1;
+    }
+    body.modal-open { overflow:hidden; }
+
+    /* Kleine quality-of-life */
+    .row { display:grid; gap:6px; margin-bottom:10px; }
+    .row.two { grid-template-columns:1fr 1fr; gap:10px; }
+    .row input[type="text"], .row input[type="time"], .row input[type="number"], .row input[type="date"], .row select, .row textarea {
+      padding:10px; border:1px solid #d9e1ec; border-radius:8px; font:inherit;
+    }
+    .btn { cursor:pointer; }
+
+    /* Tips slider */
+    .tips { list-style:none; padding:0; margin:0; }
+    .tips li { display:none; align-items:center; gap:10px; line-height:1.35; }
+    .tips li.active { display:flex; }
+    .tip-ico { width:28px; height:28px; flex:0 0 auto; }
+
+    .tips-dots { display:flex; gap:6px; justify-content:center; margin-top:10px; }
+    .tips-dots .dot {
+      width:8px; height:8px; border-radius:50%;
+      border:1px solid #1A224C; background:transparent; opacity:.5; cursor:pointer;
+    }
+    .tips-dots .dot.active { background:#1A224C; opacity:1; }
+
+    /* Snapshot overlays bij export */
+    .snapshot-overlay {
+      position:absolute; inset:0; width:100%; height:100%;
+      border-radius:inherit; object-fit:cover; pointer-events:none;
+    }
+  </style>
+
+  <!-- PDF deps -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body>
+  <!-- Top bar -->
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="edUP! Academy">
+      <picture>
+        <source srcset="media/edup_academy.svg" type="image/svg+xml">
+        <img
+          src="media/edup_academy.png"
+          alt="edUP! Academy"
+          class="brand-logo"
+          width="160"
+          height="40"
+          loading="eager"
+          decoding="async"
+        >
+      </picture>
+      <span class="brand-name"></span>
+    </a>
+
+    <nav class="tabs" role="tablist" aria-label="Studietabs">
+      <button id="tab-planner" class="tab active" role="tab" aria-selected="true" aria-controls="panel-planner">Planner</button>
+      <button id="tab-reflect" class="tab" role="tab" aria-selected="false" aria-controls="panel-reflect">Reflectie</button>
+    </nav>
+
+    <div class="top-actions">
+      <button id="exportBtn" class="btn primary">Exporteren naar PDF</button>
+      <button id="helpFab" class="fab" aria-label="Help">?</button>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="wrap">
+
+    <!-- Panel: PLANNER -->
+    <section id="panel-planner" class="panel active" role="tabpanel" aria-labelledby="tab-planner">
+      <div class="planner-layout">
+        <aside class="side">
+          <h2>Vakken & doelen</h2>
+
+          <div class="card">
+            <h3>Weekkeuze</h3>
+            <div class="row">
+              <input id="weekStart" type="date">
+            </div>
+            <button id="clearWeek" class="btn danger">Weekrooster wissen</button>
+          </div>
+
+          <div id="subjectsList" class="card">
+            <h3>Overzicht</h3>
+            <ul id="subjectsUl" class="subjects"></ul>
+          </div>
+
+          <div class="card">
+            <h3>Nieuw studieblok plannen</h3>
+            <button id="openAddBlock" class="btn">Blok toevoegen</button>
+            <p class="hint">Standaardduur: 25 min (aanpasbaar).</p>
+          </div>
+
+          <form id="addSubjectForm" class="card">
+            <div class="row">
+              <label for="subjectName">Nieuw vak/hobby</label>
+              <input id="subjectName" type="text" placeholder="Frans, Wiskunde, Gitaar …" required>
+            </div>
+            <div class="row two">
+              <div>
+                <label for="subjectColor">Kleur</label>
+                <input id="subjectColor" type="color" value="#5CC2AB">
+              </div>
+              <div>
+                <label for="subjectTarget">Doel blokken/week</label>
+                <input id="subjectTarget" type="number" min="0" max="50" value="4">
+              </div>
+            </div>
+            <div class="row">
+              <label class="check"><input id="subjectHobby" type="checkbox"> Hobby?</label>
+            </div>
+            <button class="btn" type="submit">Vak toevoegen</button>
+          </form>
+        </aside>
+
+        <section class="grid-wrap">
+          <div class="grid-head">
+            <h2>Weekrooster</h2>
+            <div class="legend" id="legend"></div>
+          </div>
+          <div id="weekGrid" class="week-grid" aria-label="Weekrooster (ma-zo)"></div>
+          <p class="subtle">Tip: plan afwisselend (interleaving) en geef jezelf tijd ertussen (spaced practice).</p>
+        </section>
+      </div>
+    </section>
+
+    <!-- Panel: REFLECTIE -->
+    <section id="panel-reflect" class="panel" role="tabpanel" aria-labelledby="tab-reflect">
+      <div class="reflect-layout">
+
+        <section class="card">
+          <h2>Hoe verliep jouw studie?</h2>
+          <div class="dials">
+            <div class="dial">
+              <div class="dial-face" data-name="interactie"></div>
+              <label>Interactie<br><small>(collectief ↔ individueel)</small></label>
+              <input type="range" min="0" max="100" value="50" data-dial="interactie">
+            </div>
+            <div class="dial">
+              <div class="dial-face" data-name="moeilijkheid"></div>
+              <label>Moeilijkheid<br><small>(niet makkelijk ↔ makkelijk)</small></label>
+              <input type="range" min="0" max="100" value="50" data-dial="moeilijkheid">
+            </div>
+            <div class="dial">
+              <div class="dial-face" data-name="spreading"></div>
+              <label>Tijd & ritme<br><small>(blocked ↔ spaced)</small></label>
+              <input type="range" min="0" max="100" value="50" data-dial="spreading">
+            </div>
+            <div class="dial">
+              <div class="dial-face" data-name="locatie"></div>
+              <label>Locatie<br><small>(school ↔ thuis/internaat)</small></label>
+              <input type="range" min="0" max="100" value="50" data-dial="locatie">
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Hoe oefende je? Hoe pauzeerde je?</h2>
+          <div class="sliders">
+            <div class="slider-row">
+              <label>Theorie ↔ Oefenen/praktijk</label>
+              <input id="s-theory" type="range" min="0" max="100" value="50">
+            </div>
+            <div class="slider-row">
+              <label>Pauzes: minder divers ↔ meer divers</label>
+              <input id="s-breaks" type="range" min="0" max="100" value="50">
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Ben je gemotiveerd en hoe schat jij jouw slaagkansen in?</h2>
+          <div id="quad" class="quadrant" role="img" aria-label="Quadrant voor energie en competentie">
+            <div class="axis-label x">Energie / motivatie</div>
+            <div class="axis-label y">Competentie / Kan ik het?</div>
+          </div>
+          <p class="subtle">Klik in het vlak om je positie aan te duiden. (x = energie/motivatie, y = competentie)</p>
+        </section>
+
+        <section class="card">
+          <h2>Belangrijke data (oudercontact e.d.)</h2>
+          <form id="datesForm" class="dates-form">
+            <div class="row">
+              <label for="dateTitle">Omschrijving</label>
+              <input id="dateTitle" type="text" placeholder="Oudercontact, studiemoment, proefwerken, …" required>
+            </div>
+            <div class="row two">
+              <div>
+                <label for="dateDay">Datum</label>
+                <input id="dateDay" type="date" required>
+              </div>
+              <div>
+                <label for="dateTime">Tijd</label>
+                <input id="dateTime" type="time">
+              </div>
+            </div>
+            <button class="btn" type="submit">Toevoegen</button>
+          </form>
+          <ul id="datesList" class="dates-list"></ul>
+          <button id="clearDates" class="btn danger subtle-btn">Alle data wissen</button>
+        </section>
+
+        <div class="actions-row">
+          <button id="exportReflect" class="btn primary">Reflectie exporteren (PDF)</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Add Block Modal -->
+  <div id="blockModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="blockModalTitle" hidden>
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="blockModalTitle">Studieblok plannen</h3>
+        <button class="modal-close" data-close>&times;</button>
+      </div>
+
+      <form id="blockForm" class="modal-body">
+        <div class="row">
+          <label for="blockSubject">Vak</label>
+          <select id="blockSubject" required></select>
+        </div>
+
+        <div id="rowTitle" class="row">
+          <label for="blockTitle">Titel</label>
+          <input id="blockTitle" type="text" placeholder="Kernbegrip / hoofdstuknaam …">
+        </div>
+
+        <div id="rowDesc" class="row">
+          <label for="blockDesc">Omschrijving (max. 25 woorden)</label>
+          <textarea id="blockDesc" rows="2" placeholder="Korte beschrijving van het blok …"></textarea>
+          <small id="descCount" class="hint">0/25 woorden</small>
+        </div>
+
+        <div id="rowTech" class="row">
+          <label for="blockTechnique">Studietechniek</label>
+          <select id="blockTechnique">
+            <option value="">— kies —</option>
+            <option>Afdekplaatje</option>
+            <option>Flashcards</option>
+            <option>Braindump en controle</option>
+            <option>Design exam questions</option>
+            <option>Answer exam questions</option>
+            <option>Uitleggen aan iemand</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="blockDay">Dag</label>
+          <select id="blockDay" required>
+            <option value="1">Maandag</option>
+            <option value="2">Dinsdag</option>
+            <option value="3">Woensdag</option>
+            <option value="4">Donderdag</option>
+            <option value="5">Vrijdag</option>
+            <option value="6">Zaterdag</option>
+            <option value="0">Zondag</option>
+          </select>
+        </div>
+
+        <div class="row two">
+          <div>
+            <label for="blockStart">Starttijd</label>
+            <input id="blockStart" type="time" step="300" value="16:00" required>
+          </div>
+          <div>
+            <label for="blockDur">Duur (min)</label>
+            <input id="blockDur" type="number" min="15" step="5" value="25" required>
+          </div>
+        </div>
+
+        <div id="rowTested" class="row check-row">
+          <label class="check">
+            <input id="blockTested" type="checkbox"> Zelfgetoetst?
+          </label>
+        </div>
+
+        <div id="rowNote" class="row">
+          <label for="blockNote">Notitie (optioneel)</label>
+          <input id="blockNote" type="text" placeholder="Extra: paginanummers, bron …">
+        </div>
+      </form>
+
+      <div class="modal-actions">
+        <button class="btn" form="blockForm" type="submit">Opslaan</button>
+        <button class="btn ghost" type="button" data-close>Annuleren</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subject Edit Modal -->
+  <div id="subjectModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="subjectModalTitle" hidden>
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="subjectModalTitle">Vak bewerken</h3>
+        <button class="modal-close" data-close>&times;</button>
+      </div>
+
+      <form id="subjectForm" class="modal-body">
+        <input type="hidden" id="subjectId">
+        <div class="row">
+          <label for="subjectNameEdit">Naam</label>
+          <input id="subjectNameEdit" type="text" placeholder="Naam van het vak" required>
+        </div>
+        <div class="row two">
+          <div>
+            <label for="subjectColorEdit">Kleur</label>
+            <input id="subjectColorEdit" type="color" value="#5CC2AB" aria-label="Kleur kiezen">
+          </div>
+          <div>
+            <label for="subjectTargetEdit">Doel blokken/week</label>
+            <input id="subjectTargetEdit" type="number" min="0" max="50" value="4">
+          </div>
+        </div>
+        <div class="row">
+          <label class="check"><input id="subjectHobbyEdit" type="checkbox"> Hobby?</label>
+        </div>
+      </form>
+
+      <div class="modal-actions">
+        <button id="subjectDelete" class="btn danger ghost" type="button">Verwijderen</button>
+        <span style="flex:1"></span>
+        <button class="btn" form="subjectForm" type="submit">Opslaan</button>
+        <button class="btn ghost" type="button" data-close>Annuleren</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rule Warning Modal -->
+  <div id="ruleModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="ruleModalTitle" hidden>
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="ruleModalTitle">Let op met je planning</h3>
+        <button class="modal-close" data-close>&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="ruleMessage"></p>
+      </div>
+      <div class="modal-actions">
+        <button id="ruleWhy" class="btn ghost">?</button>
+        <button id="ruleCancel" class="btn ghost" data-close>Wijzigen</button>
+        <button id="ruleProceed" class="btn">Toch plannen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Theory Modal -->
+  <div id="theoryModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="theoryTitle" hidden>
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="theoryTitle">Waarom interleaving, spaced practice & pauzes?</h3>
+        <button class="modal-close" data-close>&times;</button>
+      </div>
+      <div class="modal-body">
+        <ul class="theory">
+          <li><strong>Interleaving</strong>: afwisselen van vakken voorkomt automatisme; je brein blijft actiever en herkent beter wat echt belangrijk is.</li>
+          <li><strong>Spaced practice</strong>: herhalen met tussenpozen benut het vergeten: ophalen (=retrieval) kost moeite en laat kennis dieper verankeren.</li>
+          <li><strong>Pauzes</strong>: na ~25–40 min even pauzeren (5–10 min) helpt focussen en maakt ruimte voor retrieval. Lange aaneengesloten blokken zijn zelden efficiënt.</li>
+          <li><strong>Praktisch</strong>: plan geen identieke blokken direct na elkaar; leg minstens enkele uren (liever 1–2 dagen) tussen blokken voor hetzelfde vak.</li>
+        </ul>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" data-close>Oké, begrepen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Modal -->
+  <div id="helpModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle" hidden>
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="helpTitle">Uitleg & studietips</h3>
+        <button class="modal-close" data-close>&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Gebruik de <strong>Planner</strong> om per week blokken te plannen. Hou rekening met <em>interleaving</em>, <em>spaced practice</em> en <em>korte pauzes</em>.</p>
+        <ul class="tips" id="tipsList">
+          <li><strong>Braindump:</strong> schrijf 2 min alles neer wat je nog weet zonder te spieken.</li>
+          <li><strong>Flashcards:</strong> korte vraag-antwoord kaarten met zelftoetsing.</li>
+          <li><strong>Challenge grid:</strong> oude leerstof = meer punten → kies slim wat je oefent.</li>
+          <li><strong>Ophalen & uitleggen:</strong> leg de leerstof aan iemand anders uit (of aan jezelf).</li>
+          <li><strong>Niet enkel lezen/overschrijven:</strong> actief oefenen werkt beter.</li>
+        </ul>
+        <div id="tipsDots" class="tips-dots" aria-label="Tips navigatie"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" data-close>Sluiten</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===========================
+    // Brand & constants
+    // ===========================
+    const BRAND = { name: "edUP!", primary: "#1A224C", secondary: "#5CC2AB" };
+    const PX_PER_MIN = 0.8; // grid pixel height per minute
+    const DEFAULT_BLOCK_MIN = 25;
+
+    // Rooster-venster (07:00 → 24:00)
+    const START_HOUR = 7;
+    const END_HOUR   = 24;
+    const START_MIN  = START_HOUR * 60;  // 420
+    const END_MIN    = END_HOUR   * 60;  // 1440
+
+    // Break & duration policy
+    const LONG_BLOCK_MIN = 50;
+    const BREAK_GAP_MIN  = 5;
+
+    // Storage keys
+    const SKEY_SUBJECTS     = "edup_subjects_v1";
+    const SKEY_REFLECT      = "edup_reflect_v1";
+    const SKEY_DATES        = "edup_dates_v1";
+    const SKEY_WEEK_START   = "edup_weekStartISO_v1";
+    const SKEY_BLOCK_DRAFT  = "edup_block_draft_v1";
+    const SKEY_WEEK         = (weekStartISO) => `edup_week_${weekStartISO}`;
+
+    // ===========================
+    // Utilities
+    // ===========================
+    const qs  = (s, root=document) => root.querySelector(s);
+    const qsa = (s, root=document) => [...root.querySelectorAll(s)];
+    const show = el => el.removeAttribute('hidden');
+    const hide = el => el.setAttribute('hidden','');
+    function openModal(el){ show(el); document.body.classList.add('modal-open'); }
+    function closeModal(el){
+      hide(el);
+      const anyOpen = qsa('.modal').some(m => !m.hasAttribute('hidden'));
+      if (!anyOpen) document.body.classList.remove('modal-open');
+    }
+
+    function isoDate(d) { return d.toISOString().slice(0,10); }
+    function mondayOf(date) {
+      const d = new Date(date);
+      const day = d.getDay(); // 0=Sun..6=Sat
+      const diff = (day === 0 ? -6 : 1 - day);
+      d.setDate(d.getDate() + diff);
+      d.setHours(0,0,0,0);
+      return d;
+    }
+    function parseTimeToMinutes(hhmm) { const [h,m] = hhmm.split(':').map(Number); return h*60 + (m||0); }
+    function minutesToHHMM(min) {
+      const h = Math.floor(min/60), m = min%60;
+      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    }
+
+    function saveAllState() {
+      try {
+        const wk = weekStartInput.value || isoDate(mondayOf(new Date()));
+        localStorage.setItem(SKEY_WEEK_START, wk);
+        if (!blockModal.hasAttribute('hidden')) saveBlockDraft();
+      } catch(e) { console.warn('Kon state niet opslaan:', e); }
+    }
+    window.addEventListener('beforeunload', saveAllState);
+
+    // ===========================
+    // Tabs
+    // ===========================
+    const tabPlanner = qs('#tab-planner');
+    const tabReflect = qs('#tab-reflect');
+    const panelPlanner = qs('#panel-planner');
+    const panelReflect = qs('#panel-reflect');
+
+    function activateTab(which) {
+      if (which === 'planner') {
+        tabPlanner.classList.add('active');
+        tabReflect.classList.remove('active');
+        panelPlanner.classList.add('active');
+        panelReflect.classList.remove('active');
+      } else {
+        tabReflect.classList.add('active');
+        tabPlanner.classList.remove('active');
+        panelReflect.classList.add('active');
+        panelPlanner.classList.remove('active');
+      }
+    }
+    tabPlanner.addEventListener('click', () => activateTab('planner'));
+    tabReflect.addEventListener('click', () => activateTab('reflect'));
+
+    // ===========================
+    // Subjects (Vak/hobby)
+    // ===========================
+    let subjects = loadSubjects();
+    function loadSubjects() {
+      try { return JSON.parse(localStorage.getItem(SKEY_SUBJECTS)) || []; }
+      catch { return []; }
+    }
+    function saveSubjects(rerender=true) {
+      localStorage.setItem(SKEY_SUBJECTS, JSON.stringify(subjects));
+      if (rerender) {
+        renderSubjectsUI();
+        renderLegend();
+        fillSubjectSelect();
+        renderWeekGrid();
+      }
+    }
+
+    let seededNow = false;
+    if (subjects.length === 0) {
+      subjects = [
+        { id: crypto.randomUUID(), name: "Nederlands",          color: "#1A224C", target: 4, hobby:false },
+        { id: crypto.randomUUID(), name: "Frans",               color: "#5CC2AB", target: 4, hobby:false },
+        { id: crypto.randomUUID(), name: "Engels",              color: "#89C2FF", target: 4, hobby:false },
+        { id: crypto.randomUUID(), name: "Aardrijkskunde",      color: "#FFB36B", target: 2, hobby:false },
+        { id: crypto.randomUUID(), name: "Geschiedenis",        color: "#E06C9F", target: 2, hobby:false },
+        { id: crypto.randomUUID(), name: "Natuurwetenschappen", color: "#66D28A", target: 2, hobby:false },
+        { id: crypto.randomUUID(), name: "Wiskunde",            color: "#6B5CC2", target: 4, hobby:false }
+      ];
+      saveSubjects(false);
+      seededNow = true;
+    } else {
+      subjects = subjects.map(s => ({ hobby:false, ...s }));
+      saveSubjects(false);
+    }
+
+    const subjectsUl = qs('#subjectsUl');
+    const legendDiv  = qs('#legend');
+
+    function renderSubjectsUI() {
+      subjectsUl.innerHTML = "";
+      const remainingBySubject = countRemainingBlocks();
+      subjects.forEach(s => {
+        const li = document.createElement('li');
+        li.className = "subject-item";
+        if (s.hobby) {
+          li.innerHTML = `
+            <span class="dot" style="background:${s.color}"></span>
+            <span class="s-name" title="${s.name}">${s.name}<span class="tag">Hobby</span></span>
+            <button class="btn sm ghost" data-edit="${s.id}" aria-label="Bewerken">✎</button>
+            <button class="btn sm danger ghost" data-del="${s.id}" aria-label="Verwijderen">×</button>
+          `;
+        } else {
+          li.innerHTML = `
+            <span class="dot" style="background:${s.color}"></span>
+            <span class="s-name" title="${s.name}">${s.name}</span>
+            <span class="s-target">Doel: ${s.target}</span>
+            <span class="s-remain">Resterend: ${Math.max(0,(remainingBySubject[s.id] ?? s.target))}</span>
+            <button class="btn sm ghost" data-edit="${s.id}" aria-label="Bewerken">✎</button>
+            <button class="btn sm danger ghost" data-del="${s.id}" aria-label="Verwijderen">×</button>
+          `;
+        }
+        subjectsUl.appendChild(li);
+      });
+    }
+    function renderLegend() {
+      legendDiv.innerHTML = "";
+      subjects.forEach(s => {
+        const x = document.createElement('div');
+        x.className = "legend-item";
+        x.innerHTML = `<span class="dot" style="background:${s.color}"></span> ${s.name}${s.hobby ? ' <span class="tag">Hobby</span>' : ''}`;
+        legendDiv.appendChild(x);
+      });
+    }
+    function fillSubjectSelect() {
+      const sel = qs('#blockSubject');
+      sel.innerHTML = subjects.map(s => `<option value="${s.id}">${s.name}${s.hobby ? ' (Hobby)' : ''}</option>`).join('');
+    }
+    function isHobby(subjectId) {
+      const s = subjects.find(x => x.id === subjectId);
+      return !!(s && s.hobby);
+    }
+
+    qs('#addSubjectForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = qs('#subjectName').value.trim();
+      if (!name) return;
+      const color = qs('#subjectColor').value || BRAND.secondary;
+      const target = Math.max(0, Number(qs('#subjectTarget').value || 0));
+      const hobby  = qs('#subjectHobby').checked;
+      subjects.push({ id: crypto.randomUUID(), name, color, target, hobby });
+      e.target.reset();
+      saveSubjects();
+    });
+
+    const subjectModal = qs('#subjectModal');
+    const subjectForm  = qs('#subjectForm');
+    const subjectDelete= qs('#subjectDelete');
+
+    function openSubjectModal(subj) {
+      qs('#subjectId').value        = subj.id;
+      qs('#subjectNameEdit').value  = subj.name;
+      qs('#subjectColorEdit').value = subj.color.match(/^#[0-9a-f]{6}$/i) ? subj.color : '#5CC2AB';
+      qs('#subjectTargetEdit').value= subj.target;
+      qs('#subjectHobbyEdit').checked = !!subj.hobby;
+      openModal(subjectModal);
+      setTimeout(() => qs('#subjectNameEdit').focus(), 0);
+    }
+
+    subjectsUl.addEventListener('click', (e) => {
+      const delId  = e.target.getAttribute('data-del');
+      const editId = e.target.getAttribute('data-edit');
+      if (delId) {
+        subjects = subjects.filter(s => s.id !== delId);
+        saveSubjects();
+        renderWeekGrid();
+      }
+      if (editId) {
+        const s = subjects.find(x => x.id === editId);
+        if (!s) return;
+        openSubjectModal(s);
+      }
+    });
+
+    subjectForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id     = qs('#subjectId').value;
+      const name   = qs('#subjectNameEdit').value.trim();
+      const color  = qs('#subjectColorEdit').value || BRAND.secondary;
+      const target = Math.max(0, Number(qs('#subjectTargetEdit').value || 0));
+      const hobby  = qs('#subjectHobbyEdit').checked;
+      const s = subjects.find(x => x.id === id);
+      if (!s) return;
+      s.name = name || s.name;
+      s.color = color;
+      s.target = target;
+      s.hobby = hobby;
+      saveSubjects();
+      closeModal(subjectModal);
+    });
+
+    subjectDelete.addEventListener('click', () => {
+      const id = qs('#subjectId').value;
+      const s = subjects.find(x => x.id === id);
+      if (!s) return;
+      if (confirm(`"${s.name}" verwijderen?`)) {
+        subjects = subjects.filter(x => x.id !== id);
+        saveSubjects();
+        renderWeekGrid();
+        closeModal(subjectModal);
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const topOpen = qsa('.modal').find(m => !m.hasAttribute('hidden'));
+        if (topOpen) closeModal(topOpen);
+      }
+    });
+
+    // ===========================
+    // Week schedule
+    // ===========================
+    const weekGrid = qs('#weekGrid');
+    const weekStartInput = qs('#weekStart');
+
+    const savedWeekStart = localStorage.getItem(SKEY_WEEK_START);
+    const today = new Date();
+    const monday = mondayOf(today);
+    weekStartInput.value = savedWeekStart || isoDate(monday);
+
+    function loadWeek(weekISO) {
+      try { return JSON.parse(localStorage.getItem(SKEY_WEEK(weekISO))) || []; }
+      catch { return []; }
+    }
+    function saveWeek(weekISO, blocks) {
+      localStorage.setItem(SKEY_WEEK(weekISO), JSON.stringify(blocks));
+      renderSubjectsUI();
+    }
+    function currentWeekISO() { return weekStartInput.value; }
+    function getBlocks() { return loadWeek(currentWeekISO()); }
+    function setBlocks(arr) { saveWeek(currentWeekISO(), arr); renderWeekGrid(); }
+
+    function countRemainingBlocks() {
+      const blocks = getBlocks();
+      const perSubject = {};
+      subjects.forEach(s => perSubject[s.id] = s.target);
+      blocks.forEach(b => {
+        const subj = subjects.find(s => s.id === b.subjectId);
+        const cnt = Math.max(1, Math.round(b.duration/DEFAULT_BLOCK_MIN));
+        if (subj && !subj.hobby && perSubject[b.subjectId] != null) perSubject[b.subjectId] -= cnt;
+      });
+      return perSubject;
+    }
+
+    function renderWeekGrid() {
+      weekGrid.innerHTML = "";
+
+      const head = document.createElement('div');
+      head.className = 'row header';
+      const hours = document.createElement('div');
+      hours.className = 'hours-col';
+      hours.innerHTML = "<div></div>";
+      head.appendChild(hours);
+      const dayNames = ["Zondag","Maandag","Dinsdag","Woensdag","Donderdag","Vrijdag","Zaterdag"];
+      [1,2,3,4,5,6,0].forEach(d => {
+        const c = document.createElement('div');
+        c.className = 'day-col head';
+        c.textContent = dayNames[d];
+        head.appendChild(c);
+      });
+      weekGrid.appendChild(head);
+
+      const body = document.createElement('div');
+      body.className = 'body';
+
+      // Urenrail (07:00 → 24:00)
+      const hr = document.createElement('div');
+      hr.className = 'hours-col';
+      hr.style.height = ((END_MIN - START_MIN) * PX_PER_MIN) + 'px';
+      for (let h = START_HOUR; h < END_HOUR; h++) {
+        const mark = document.createElement('div');
+        mark.className = 'hour-mark';
+        mark.style.height = (60 * PX_PER_MIN) + 'px';
+        mark.textContent = `${String(h).padStart(2,'0')}:00`;
+        hr.appendChild(mark);
+      }
+      body.appendChild(hr);
+
+      const blocks = getBlocks();
+
+      [1,2,3,4,5,6,0].forEach(day => {
+        const col = document.createElement('div');
+        col.className = 'day-col';
+        col.style.height = ((END_MIN - START_MIN) * PX_PER_MIN) + 'px';
+        col.dataset.day = String(day);
+
+        for (let h = START_HOUR; h <= END_HOUR; h++) {
+          const line = document.createElement('div');
+          line.className = 'hour-line';
+          line.style.top = ((h - START_HOUR) * 60 * PX_PER_MIN) + 'px';
+          col.appendChild(line);
+        }
+
+        blocks.filter(b => b.day === day).forEach(b => {
+          const sub = subjects.find(s => s.id === b.subjectId);
+
+          const bStart = b.startMin;
+          const bEnd   = b.startMin + b.duration;
+          const visStart = Math.max(bStart, START_MIN);
+          const visEnd   = Math.min(bEnd, END_MIN);
+          if (visEnd <= START_MIN || visStart >= END_MIN) return;
+
+          const topPx   = (visStart - START_MIN) * PX_PER_MIN;
+          const heightPx= (visEnd   - visStart) * PX_PER_MIN;
+
+          const truncatedTop = bStart < START_MIN;
+          const truncatedBot = bEnd   > END_MIN;
+
+          const block = document.createElement('button');
+          block.type = "button";
+          block.className = 'study-block';
+          block.style.top = topPx + 'px';
+          block.style.height = heightPx + 'px';
+          block.style.background = sub ? sub.color : BRAND.secondary;
+          block.title = `${sub?sub.name:'Vak'} — ${minutesToHHMM(b.startMin)} (${b.duration} min)` +
+                        (truncatedTop ? " • (Begint vóór 07:00)" : "") +
+                        (truncatedBot ? " • (Eindigt na 24:00)" : "");
+
+          if (sub && sub.hobby) {
+            block.innerHTML = `
+              <span class="sb-time">${minutesToHHMM(b.startMin)} • ${b.duration}m</span>
+              <span class="sb-name">${sub.name}</span>
+            `;
+          } else {
+            block.innerHTML = `
+              <span class="sb-time">
+                ${minutesToHHMM(b.startMin)} • ${b.duration}m ${b.tested ? '✓' : ''}
+                ${truncatedTop ? '↥' : ''}${truncatedBot ? '↧' : ''}
+              </span>
+              <span class="sb-name">${sub?sub.name:'Vak'}</span>
+              ${b.title ? `<span class="sb-title">${b.title}</span>` : ''}
+              ${b.technique ? `<span class="sb-tech">${b.technique}</span>` : ''}
+              ${b.desc ? `<span class="sb-desc">${b.desc}</span>` : ''}
+              ${b.note ? `<span class="sb-note">${b.note}</span>` : ''}
+            `;
+          }
+
+          block.addEventListener('click', () => editBlock(b.id));
+          col.appendChild(block);
+        });
+
+        body.appendChild(col);
+      });
+
+      weekGrid.appendChild(body);
+    }
+
+    weekStartInput.addEventListener('change', () => {
+      localStorage.setItem(SKEY_WEEK_START, weekStartInput.value);
+      renderWeekGrid();
+    });
+
+    qs('#clearWeek').addEventListener('click', () => {
+      if (confirm("Weet je zeker dat je deze week wilt leegmaken?")) {
+        localStorage.setItem(SKEY_WEEK(currentWeekISO()), JSON.stringify([]));
+        renderWeekGrid();
+        renderSubjectsUI();
+      }
+    });
+
+    // ===========================
+    // Add/Edit blocks + regels
+    // ===========================
+    const blockModal = qs('#blockModal');
+    const blockForm  = qs('#blockForm');
+    const openAddBlockBtn = qs('#openAddBlock');
+
+    const blockDesc = qs('#blockDesc');
+    const descCount = qs('#descCount');
+    function countWords(txt){ return (txt.trim().match(/\S+/g) || []).length; }
+    function updateDescCount(){
+      const n = countWords(blockDesc.value);
+      descCount.textContent = `${n}/25 woorden`;
+      if (n > 25) {
+        blockDesc.setCustomValidity('Hou het bij max. 25 woorden.');
+        descCount.classList.add('error');
+      } else {
+        blockDesc.setCustomValidity('');
+        descCount.classList.remove('error');
+      }
+    }
+    blockDesc.addEventListener('input', updateDescCount);
+
+    function getBlockDraft() {
+      try { return JSON.parse(localStorage.getItem(SKEY_BLOCK_DRAFT)) || null; } catch { return null; }
+    }
+    function saveBlockDraft() {
+      const draft = {
+        subjectId: qs('#blockSubject').value || '',
+        title: qs('#blockTitle').value.trim(),
+        desc: qs('#blockDesc').value.trim(),
+        technique: qs('#blockTechnique').value,
+        day: qs('#blockDay').value,
+        start: qs('#blockStart').value,
+        dur: qs('#blockDur').value,
+        tested: qs('#blockTested').checked,
+        note: qs('#blockNote').value.trim()
+      };
+      localStorage.setItem(SKEY_BLOCK_DRAFT, JSON.stringify(draft));
+    }
+    function clearBlockDraft() { localStorage.removeItem(SKEY_BLOCK_DRAFT); }
+
+    ['#blockSubject','#blockTitle','#blockDesc','#blockTechnique','#blockDay','#blockStart','#blockDur','#blockTested','#blockNote']
+      .forEach(sel => qs(sel).addEventListener('input', saveBlockDraft));
+
+    // Titel auto-generator (niet-hobby): "Studieblok X"
+    function nextStudyBlockTitle(subjectId) {
+      const count = getBlocks().filter(b => b.subjectId === subjectId).length;
+      return `Studieblok ${count + 1}`;
+    }
+
+    function toggleHobbyFields(subjectId) {
+      const hobby = isHobby(subjectId);
+      const rows = [qs('#rowTitle'), qs('#rowDesc'), qs('#rowTech'), qs('#rowTested'), qs('#rowNote')];
+      rows.forEach(r => r.style.display = hobby ? 'none' : '');
+      if (hobby) {
+        qs('#blockTitle').value = '';
+        qs('#blockDesc').value = '';
+        qs('#blockTechnique').value = '';
+        qs('#blockTested').checked = false;
+        qs('#blockNote').value = '';
+      } else {
+        if (!qs('#blockTitle').value) {
+          const sid = qs('#blockSubject').value;
+          if (sid) qs('#blockTitle').value = nextStudyBlockTitle(sid);
+        }
+      }
+      updateDescCount();
+    }
+
+    function openBlockModal(prefill=null) {
+      fillSubjectSelect();
+      blockForm.reset();
+      qs('#blockDur').value = DEFAULT_BLOCK_MIN;
+      descCount.textContent = '0/25 woorden';
+
+      const draft = !prefill ? getBlockDraft() : null;
+
+      if (prefill || draft) {
+        const data = prefill || {
+          subjectId: draft.subjectId || (subjects[0]?.id || ''),
+          day: Number(draft.day || 1),
+          startMin: draft.start ? parseTimeToMinutes(draft.start) : parseTimeToMinutes('16:00'),
+          duration: Number(draft.dur || DEFAULT_BLOCK_MIN),
+          title: draft.title || '',
+          desc: draft.desc || '',
+          technique: draft.technique || '',
+          tested: !!draft.tested,
+          note: draft.note || '',
+        };
+
+        qs('#blockSubject').value   = data.subjectId;
+        qs('#blockDay').value       = String(data.day);
+        qs('#blockStart').value     = minutesToHHMM(data.startMin);
+        qs('#blockDur').value       = data.duration;
+
+        const hobby = isHobby(data.subjectId);
+        if (!hobby) {
+          const auto = nextStudyBlockTitle(data.subjectId);
+          qs('#blockTitle').value     = data.title || auto;
+          qs('#blockDesc').value      = data.desc  || '';
+          qs('#blockTechnique').value = data.technique || '';
+          qs('#blockTested').checked  = !!data.tested;
+          qs('#blockNote').value      = data.note || '';
+        } else {
+          qs('#blockTitle').value = '';
+          qs('#blockDesc').value = '';
+          qs('#blockTechnique').value = '';
+          qs('#blockTested').checked = false;
+          qs('#blockNote').value = '';
+        }
+        updateDescCount();
+
+        if (prefill) blockForm.dataset.editId = prefill.id;
+        else delete blockForm.dataset.editId;
+      } else {
+        delete blockForm.dataset.editId;
+        const sid = qs('#blockSubject').value;
+        if (sid && !isHobby(sid)) {
+          qs('#blockTitle').value = nextStudyBlockTitle(sid);
+        }
+      }
+
+      toggleHobbyFields(qs('#blockSubject').value);
+      openModal(blockModal);
+    }
+    openAddBlockBtn.addEventListener('click', () => openBlockModal());
+    qs('#blockSubject').addEventListener('change', (e) => toggleHobbyFields(e.target.value));
+
+    function touchingWithin(a, b, maxGapMin) {
+      if (!a || !b) return false;
+      const aEnd = a.startMin + a.duration;
+      const bStart = b.startMin;
+      const dayGap = ((b.day - a.day + 7) % 7);
+      if (dayGap !== 0) return false;
+      const gap = bStart - aEnd;
+      return Math.abs(gap) <= maxGapMin;
+    }
+
+    function continuousChainMinutes(center, blocks, maxGapMin) {
+      const sameDay = blocks.filter(b => b.day === center.day)
+                            .concat([center])
+                            .sort((a,b) => a.startMin - b.startMin);
+      const idx = sameDay.findIndex(b => b === center);
+      let total = center.duration;
+
+      let i = idx - 1;
+      let currentStart = center.startMin;
+      while (i >= 0) {
+        const prev = sameDay[i];
+        const prevEnd = prev.startMin + prev.duration;
+        const gap = currentStart - prevEnd;
+        if (gap <= maxGapMin) {
+          total += prev.duration;
+          currentStart = prev.startMin;
+          i--;
+        } else break;
+      }
+
+      let j = idx + 1;
+      let currentEnd = center.startMin + center.duration;
+      while (j < sameDay.length) {
+        const next = sameDay[j];
+        const gap = next.startMin - currentEnd;
+        if (gap <= maxGapMin) {
+          total += next.duration;
+          currentEnd = next.startMin + next.duration;
+          j++;
+        } else break;
+      }
+
+      return total;
+    }
+
+    function checkRules(newBlock, blocks) {
+      const sorted = [...blocks, newBlock].sort((a,b) => (a.day - b.day) || (a.startMin - b.startMin));
+      const idx = sorted.findIndex(b => b === newBlock);
+      const prev = sorted[idx-1];
+      const next = sorted[idx+1];
+
+      const msg = [];
+
+      const THRESH_ADJ = 30;
+      if (prev && prev.subjectId === newBlock.subjectId && touchingWithin(prev,newBlock,THRESH_ADJ)) {
+        msg.push("Interleaving: Je plant twee blokken voor hetzelfde vak direct na elkaar.");
+      }
+      if (next && next.subjectId === newBlock.subjectId && touchingWithin(newBlock,next,THRESH_ADJ)) {
+        msg.push("Interleaving: Je plant twee blokken voor hetzelfde vak direct achter elkaar.");
+      }
+
+      const MIN_SPACING = 12*60;
+      const sameDayBlocks = blocks.filter(b => b.day===newBlock.day && b.subjectId===newBlock.subjectId);
+      if (sameDayBlocks.length >= 2) {
+        msg.push("Spaced practice: Veel blokken voor hetzelfde vak op één dag (blocked practice).");
+      }
+      const closeSame = blocks.some(b => b.subjectId===newBlock.subjectId && b.day===newBlock.day &&
+        Math.abs(b.startMin - newBlock.startMin) < MIN_SPACING);
+      if (closeSame) {
+        msg.push("Spaced practice: Er zit minder dan ~12 uur tussen blokken voor hetzelfde vak.");
+      }
+
+      if (newBlock.duration >= LONG_BLOCK_MIN) {
+        msg.push("Pauze: Dit blok duurt ≥ 50 min. Plan een korte pauze (5–10 min).");
+      } else {
+        const chain = continuousChainMinutes(newBlock, blocks, BREAK_GAP_MIN);
+        if (chain >= LONG_BLOCK_MIN) {
+          msg.push("Pauze: Je hebt ≥ 50 min aaneengesloten studie gepland. Neem tussendoor 5–10 min pauze.");
+        }
+      }
+
+      return msg;
+    }
+
+    const ruleModal = qs('#ruleModal');
+    const ruleMsg   = qs('#ruleMessage');
+    const ruleWhy   = qs('#ruleWhy');
+    const ruleCancel= qs('#ruleCancel');
+    const ruleProceed=qs('#ruleProceed');
+    let pendingBlock = null; let pendingEdit = null;
+
+    function proposeBlock(saveNow, isEdit=false) {
+      const blocks = getBlocks();
+      const warnings = checkRules(pendingBlock, blocks.filter(b => b.id !== (isEdit?pendingBlock.id:null)));
+      if (warnings.length === 0) { saveNow(); return; }
+
+      ruleMsg.innerHTML = "<strong>We zagen iets in je planning:</strong><br>" + warnings.map(w=>`• ${w}`).join("<br>");
+      openModal(ruleModal);
+
+      ruleWhy.onclick = () => { closeModal(ruleModal); openModal(qs('#theoryModal')); };
+      ruleCancel.onclick = () => { pendingBlock = null; pendingEdit = null; };
+      ruleProceed.onclick = () => {
+        saveNow();
+        pendingBlock = null; pendingEdit = null;
+        closeModal(ruleModal);
+      };
+    }
+
+    blockForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      updateDescCount();
+      if (!blockForm.reportValidity()) return;
+
+      const sub       = qs('#blockSubject').value;
+      const day       = Number(qs('#blockDay').value);
+      const startMin  = parseTimeToMinutes(qs('#blockStart').value);
+      const duration  = Math.max(10, Number(qs('#blockDur').value || DEFAULT_BLOCK_MIN));
+
+      const subjObj   = subjects.find(x => x.id === sub);
+      const hobby     = !!(subjObj && subjObj.hobby);
+
+      let title     = hobby ? '' : (qs('#blockTitle').value.trim() || nextStudyBlockTitle(sub));
+      let desc      = hobby ? '' : qs('#blockDesc').value.trim();
+      let technique = hobby ? '' : qs('#blockTechnique').value.trim();
+      let tested    = hobby ? false : qs('#blockTested').checked;
+      let note      = hobby ? '' : qs('#blockNote').value.trim();
+
+      const blocks = getBlocks();
+      const editId = blockForm.dataset.editId;
+
+      if (editId) {
+        const idx = blocks.findIndex(b => b.id === editId);
+        if (idx < 0) return;
+        const edited = { ...blocks[idx], subjectId: sub, day, startMin, duration, title, desc, technique, tested, note };
+        pendingBlock = edited; pendingEdit = true;
+        const save = () => { blocks[idx] = edited; setBlocks(blocks); clearBlockDraft(); closeModal(blockModal); };
+        proposeBlock(save, true);
+      } else {
+        const newB = { id: crypto.randomUUID(), subjectId: sub, day, startMin, duration, title, desc, technique, tested, note };
+        pendingBlock = newB; pendingEdit = false;
+        const save = () => { blocks.push(newB); setBlocks(blocks); clearBlockDraft(); closeModal(blockModal); };
+        proposeBlock(save, false);
+      }
+    });
+
+    function editBlock(id) {
+      const b = getBlocks().find(x => x.id === id);
+      if (!b) return;
+      openBlockModal(b);
+
+      const existing = qs('#blockDelete');
+      if (existing) existing.remove();
+      const delBtn = document.createElement('button');
+      delBtn.id = 'blockDelete';
+      delBtn.type = 'button';
+      delBtn.className = 'btn danger ghost';
+      delBtn.textContent = 'Verwijder blok';
+      delBtn.style.marginLeft = '8px';
+      delBtn.addEventListener('click', () => {
+        const rest = getBlocks().filter(x => x.id !== id);
+        setBlocks(rest);
+        clearBlockDraft();
+        closeModal(blockModal);
+      });
+      qs('#blockForm').closest('.modal-box').querySelector('.modal-actions').appendChild(delBtn);
+    }
+
+    // ===========================
+    // Dials & sliders (Reflect) + storage
+    // ===========================
+    function loadReflect() {
+      try { return JSON.parse(localStorage.getItem(SKEY_REFLECT)) || {}; }
+      catch { return {}; }
+    }
+    function saveReflect(data) {
+      localStorage.setItem(SKEY_REFLECT, JSON.stringify(data));
+    }
+    const reflect = loadReflect();
+
+    const dialInputs = qsa('input[type="range"][data-dial]');
+    function updateDialFace(name, val) {
+      const face = qs(`.dial-face[data-name="${name}"]`);
+      if (!face) return;
+      face.style.background = `conic-gradient(${BRAND.secondary} ${val*3.6}deg, #E8EEF6 ${val*3.6}deg)`;
+      face.querySelector?.('span')?.remove();
+      const lbl = document.createElement('span');
+      lbl.textContent = `${val}`;
+      face.appendChild(lbl);
+    }
+    dialInputs.forEach(inp => {
+      const key = `dial_${inp.dataset.dial}`;
+      const val = reflect[key] ?? Number(inp.value);
+      inp.value = val;
+      updateDialFace(inp.dataset.dial, Number(val));
+      inp.addEventListener('input', () => {
+        updateDialFace(inp.dataset.dial, Number(inp.value));
+        reflect[key] = Number(inp.value);
+        saveReflect(reflect);
+      });
+    });
+
+    const sTheory = qs('#s-theory');
+    const sBreaks = qs('#s-breaks');
+    sTheory.value = reflect['s_theory'] ?? 50;
+    sBreaks.value = reflect['s_breaks'] ?? 50;
+    sTheory.addEventListener('input', () => { reflect['s_theory'] = Number(sTheory.value); saveReflect(reflect); });
+    sBreaks.addEventListener('input', () => { reflect['s_breaks'] = Number(sBreaks.value); saveReflect(reflect); });
+
+    const quad = qs('#quad');
+    function drawQuadDot() {
+      const x = reflect.qx ?? 0.5;
+      const y = reflect.qy ?? 0.5;
+      quad.style.setProperty('--qx', x);
+      quad.style.setProperty('--qy', y);
+    }
+    quad.addEventListener('click', (e) => {
+      const r = quad.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width;
+      const y = (e.clientY - r.top) / r.height;
+      reflect.qx = Math.max(0,Math.min(1,x));
+      reflect.qy = Math.max(0,Math.min(1,y));
+      drawQuadDot();
+      saveReflect(reflect);
+    });
+    drawQuadDot();
+
+    // ===========================
+    // Belangrijke data
+    // ===========================
+    const datesForm = qs('#datesForm');
+    const datesList = qs('#datesList');
+    const clearDatesBtn = qs('#clearDates');
+
+    function loadDates() {
+      try { return JSON.parse(localStorage.getItem(SKEY_DATES)) || []; }
+      catch { return []; }
+    }
+    function saveDates(items) {
+      localStorage.setItem(SKEY_DATES, JSON.stringify(items));
+      renderDates();
+    }
+    let dates = loadDates();
+
+    if (dates.length === 0) {
+      dates.push({ id: crypto.randomUUID(), title: "Oudercontact", date: isoDate(new Date()), time: "19:00", done: false });
+      saveDates(dates);
+    }
+
+    function renderDates() {
+      datesList.innerHTML = "";
+      if (dates.length === 0) {
+        datesList.innerHTML = `<li class="empty">Nog geen data ingevoerd.</li>`;
+        return;
+      }
+      dates
+        .sort((a,b)=> (a.date||"").localeCompare(b.date) || (a.time||"").localeCompare(b.time))
+        .forEach(d => {
+          const li = document.createElement('li');
+          li.className = 'date-item';
+          li.innerHTML = `
+            <label class="check">
+              <input type="checkbox" data-done="${d.id}" ${d.done?'checked':''}>
+              <span class="ttl ${d.done?'done':''}">${d.title}</span>
+            </label>
+            <span class="when">${d.date || ''}${d.time? ' • '+d.time : ''}</span>
+            <span class="spacer"></span>
+            <button class="btn sm ghost" data-edit="${d.id}">✎</button>
+            <button class="btn sm danger ghost" data-del="${d.id}">×</button>
+          `;
+          datesList.appendChild(li);
+        });
+    }
+    renderDates();
+
+    datesForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = qs('#dateTitle').value.trim();
+      const day   = qs('#dateDay').value;
+      const time  = qs('#dateTime').value;
+      if (!title || !day) return;
+      dates.push({ id: crypto.randomUUID(), title, date: day, time, done:false });
+      e.target.reset();
+      saveDates(dates);
+    });
+
+    datesList.addEventListener('click', (e) => {
+      const del = e.target.getAttribute('data-del');
+      const ed  = e.target.getAttribute('data-edit');
+      const doneId = e.target.getAttribute('data-done');
+      if (del) {
+        dates = dates.filter(x => x.id !== del);
+        saveDates(dates);
+      }
+      if (ed) {
+        const d = dates.find(x => x.id === ed);
+        if (!d) return;
+        const nt = prompt("Omschrijving:", d.title) ?? d.title;
+        const nd = prompt("Datum (YYYY-MM-DD):", d.date) ?? d.date;
+        const ntm= prompt("Tijd (HH:MM):", d.time || "") ?? d.time;
+        d.title = nt || d.title;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(nd)) d.date = nd;
+        if (!ntm || /^\d{2}:\d{2}$/.test(ntm)) d.time = ntm;
+        saveDates(dates);
+      }
+      if (doneId) {
+        const d = dates.find(x => x.id === doneId);
+        if (d) { d.done = !d.done; saveDates(dates); }
+      }
+    });
+
+    clearDatesBtn.addEventListener('click', () => {
+      if (confirm("Alle data wissen?")) {
+        dates = [];
+        saveDates(dates);
+      }
+    });
+
+    // ===========================
+    // Export PDF — no tainted canvas + split by active tab
+    // ===========================
+    const exportBtn = qs('#exportBtn');
+
+    async function captureElementToImage(el) {
+      const canvas = await html2canvas(el, { backgroundColor: '#ffffff', scale: 2 });
+      return canvas.toDataURL('image/png');
+    }
+
+    // Load PNG as DataURL (no canvas => no taint)
+    let _logoDataUrlPromise = null;
+    function getLogoDataUrl() {
+      if (_logoDataUrlPromise) return _logoDataUrlPromise;
+      _logoDataUrlPromise = (async () => {
+        try {
+          const res = await fetch('media/edup_academy.png', { cache: 'force-cache' });
+          const blob = await res.blob();
+          const fr = new FileReader();
+          const dataUrl = await new Promise((resolve, reject) => {
+            fr.onerror = reject;
+            fr.onload = () => resolve(fr.result);
+            fr.readAsDataURL(blob);
+          });
+          return dataUrl; // "data:image/png;base64,..."
+        } catch (e) {
+          console.warn('Logo laden mislukt, ga verder zonder logo.', e);
+          return null;
+        }
+      })();
+      return _logoDataUrlPromise;
+    }
+
+    async function drawHeaderWithLogo(pdf, titleText) {
+      const W = pdf.internal.pageSize.getWidth();
+      pdf.setFillColor(BRAND.primary);
+      pdf.rect(0, 0, W, 44, 'F');
+
+      let textX = 16;
+      try {
+        const dataUrl = await getLogoDataUrl();
+        if (dataUrl) {
+          const im = new Image();
+          im.src = dataUrl;
+          await new Promise(r => { im.onload = r; im.onerror = r; });
+          const aspect = (im.naturalWidth && im.naturalHeight) ? (im.naturalWidth / im.naturalHeight) : 1;
+          const h = 28, w = h * aspect;
+          pdf.addImage(dataUrl, 'PNG', 16, 8, w, h);
+          textX = 16 + w + 10;
+        }
+      } catch (e) {
+        // Geen crash; we printen enkel titel
+      }
+
+      pdf.setTextColor(255,255,255);
+      pdf.setFont('helvetica','bold'); pdf.setFontSize(14);
+      pdf.text(titleText, textX, 28);
+    }
+
+    // Rasterize tricky widgets to avoid grey wash
+    async function rasterizeForExport(rootEl) {
+      const selectors = ['#quad', '.dial-face'];
+      const overlays = [];
+      for (const sel of selectors) {
+        const nodes = rootEl.querySelectorAll(sel);
+        for (const node of nodes) {
+          const canvas = await html2canvas(node, { backgroundColor: null, scale: 2 });
+          const imgEl = new Image();
+          imgEl.src = canvas.toDataURL('image/png');
+          imgEl.className = 'snapshot-overlay';
+          node.appendChild(imgEl);
+          overlays.push(imgEl);
+        }
+      }
+      return () => overlays.forEach(img => img.remove());
+    }
+
+    async function exportPDF(includePlanner, includeReflect, name) {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+      const W = pdf.internal.pageSize.getWidth();
+      const H = pdf.internal.pageSize.getHeight();
+      let first = true;
+
+      async function addPageFor(el, title) {
+        const cleanup = await rasterizeForExport(el);
+        const img = await captureElementToImage(el);
+        cleanup();
+
+        if (!first) pdf.addPage();
+        first = false;
+
+        const fullTitle = `${BRAND.name} — ${title}${name ? ' — ' + name : ''}`;
+        await drawHeaderWithLogo(pdf, fullTitle);
+
+        const margin = 28;
+        const availW = W - margin*2;
+        const availH = H - margin*2 - 44;
+        const tmp = new Image();
+        tmp.src = img;
+        await new Promise(r => tmp.onload = r);
+        const imgW = tmp.width, imgH = tmp.height;
+        const scale = Math.min(availW/imgW, availH/imgH);
+        pdf.addImage(img, 'PNG', margin, 44 + margin, imgW*scale, imgH*scale);
+      }
+
+      if (includePlanner) await addPageFor(panelPlanner, "Planner");
+      if (includeReflect) await addPageFor(panelReflect, "Reflectie");
+      pdf.save(`${(name||'edUP')}-studie.pdf`);
+    }
+
+    // Split export by active tab
+    exportBtn.addEventListener('click', async () => {
+      const isPlannerActive = panelPlanner.classList.contains('active');
+      const nm = (prompt("Naam (op PDF) – optioneel:", "") || "").trim();
+      await exportPDF(isPlannerActive, !isPlannerActive, nm);
+    });
+
+    // Explicit reflect export button
+    qs('#exportReflect').addEventListener('click', async () => {
+      const nm = (prompt("Naam (op PDF) – optioneel:", "") || "").trim();
+      await exportPDF(false, true, nm);
+    });
+
+    // ===========================
+    // Help modal + tips slider
+    // ===========================
+    const helpModal = qs('#helpModal');
+    qs('#helpFab').addEventListener('click', () => { openModal(helpModal); startTipsAuto(); });
+
+    const tipsList = qs('#tipsList');
+    const tipsDots = qs('#tipsDots');
+    const tipLis = qsa('li', tipsList);
+
+    const TIP_ICONS = [
+      `<svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="#1A224C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+         <path d="M9 18v1a3 3 0 0 0 6 0v-1"/><path d="M12 2a7 7 0 0 0-4 12.9V16h8v-1.1A7 7 0 0 0 12 2z"/>
+         <path d="M2 12h2M20 12h2M12 2v2M5 5l1.5 1.5M19 5l-1.5 1.5" stroke="#5CC2AB"/>
+       </svg>`,
+      `<svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="#1A224C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+         <rect x="3" y="6" width="12" height="10" rx="2"/>
+         <rect x="9" y="8" width="12" height="10" rx="2" stroke="#5CC2AB"/>
+       </svg>`,
+      `<svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="#1A224C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+         <rect x="3" y="3" width="18" height="18" rx="3"/>
+         <path d="M3 9h18M3 15h18M9 3v18M15 3v18" stroke="#5CC2AB"/>
+       </svg>`,
+      `<svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="#1A224C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+         <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V6a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
+         <path d="M8 9h8M8 12h5" stroke="#5CC2AB"/>
+       </svg>`,
+      `<svg class="tip-ico" viewBox="0 0 24 24" fill="none" stroke="#1A224C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+         <path d="M4 4h10a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3V4z"/>
+         <path d="M14 4h6v16a3 3 0 0 1-3 3h-6" stroke="#5CC2AB"/>
+       </svg>`
+    ];
+
+    tipLis.forEach((li, i) => {
+      li.insertAdjacentHTML('afterbegin', TIP_ICONS[i % TIP_ICONS.length]);
+    });
+
+    tipsDots.innerHTML = tipLis.map((_, i) =>
+      `<button class="dot" role="tab" aria-label="Tip ${i+1}"></button>`
+    ).join('');
+    const dotBtns = [...tipsDots.querySelectorAll('.dot')];
+
+    let tipIndex = 0, tipTimer = null;
+
+    function showTip(i) {
+      tipLis.forEach((li, idx) => li.classList.toggle('active', idx === i));
+      dotBtns.forEach((b, idx) => b.classList.toggle('active', idx === i));
+      tipIndex = i;
+    }
+    function nextTip() { showTip((tipIndex + 1) % tipLis.length); }
+    function startTipsAuto() { stopTipsAuto(); tipTimer = setInterval(nextTip, 6000); }
+    function stopTipsAuto()  { if (tipTimer) clearInterval(tipTimer), tipTimer = null; }
+
+    tipsDots.addEventListener('click', (e) => {
+      if (e.target.classList.contains('dot')) {
+        const i = [...dotBtns].indexOf(e.target);
+        if (i >= 0) { showTip(i); startTipsAuto(); }
+      }
+    });
+
+    showTip(0);
+
+    qsa('.modal').forEach(m => {
+      m.addEventListener('click', (e) => {
+        if (e.target === m) {
+          if (m.id === 'blockModal') clearBlockDraft();
+          if (m.id === 'helpModal')  { try { stopTipsAuto(); } catch {} }
+          closeModal(m);
+        }
+      });
+    });
+
+    // ===========================
+    // Init
+    // ===========================
+    renderSubjectsUI();
+    renderLegend();
+    renderWeekGrid();
+    if (seededNow) { renderSubjectsUI(); renderLegend(); fillSubjectSelect(); }
+  </script>
+</body>
+</html>
