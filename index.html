@@ -1167,7 +1167,7 @@ function makeYToMinutes(cumulativeTop, hourScale) {
     // Titel auto-generator (niet-hobby): "Studieblok X" (X = aantal dit vak in deze week + 1)
     function nextStudyBlockTitle(subjectId) {
       const count = getBlocks().filter(b => b.subjectId === subjectId).length;
-      return `Studieblok ${count + 1}`;
+      return `Studieblok `;
     }
 
     function toggleHobbyFields(subjectId) {
@@ -1763,6 +1763,7 @@ if (seededNow) { renderSubjectsUI(); renderLegend(); fillSubjectSelect(); }
   </script>
 </body>
 </html>
+
 
 
 
