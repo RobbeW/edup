@@ -165,15 +165,34 @@
     .tips li.active { display:flex; }
     .tip-ico { width:28px; height:28px; flex:0 0 auto; }
 
-    .tips-dots { display:flex; gap:8px; justify-content:center; margin-top:12px; }
-    .tips-dots .dot {
-      width:10px; height:10px; aspect-ratio:1/1;
-      border-radius:50%;
-      border:1px solid var(--brand-primary);
-      background:transparent; opacity:.55; cursor:pointer;
-      display:inline-block;
-    }
-    .tips-dots .dot.active { background:var(--brand-primary); opacity:1; }
+    .tips-dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;     /* ← keep children from stretching vertically */
+  margin-top: 12px;
+}
+
+.tips-dots .dot {
+  flex: 0 0 auto;          /* ← don’t let flexbox stretch the dot */
+  width: 10px;
+  height: 10px;
+  aspect-ratio: 1 / 1;     /* safe to keep; guarantees square */
+  border-radius: 50%;
+  border: 1px solid var(--brand-primary);
+  background: transparent;
+  opacity: .55;
+  cursor: pointer;
+  display: inline-block;
+  padding: 0;              /* avoid accidental growth */
+  line-height: 0;          /* avoid baseline weirdness */
+}
+
+.tips-dots .dot.active {
+  background: var(--brand-primary);
+  opacity: 1;
+}
+
 
     /* Snapshot overlays bij export */
     .snapshot-overlay {
@@ -246,7 +265,7 @@
 
           <form id="addSubjectForm" class="card">
             <div class="row">
-              <label for="subjectName">Nieuw vak/hobby</label>
+              <label for="subjectName">Nieuw vak/hobby aanmaken</label>
               <input id="subjectName" type="text" placeholder="Frans, Wiskunde, gitaarles …" required>
             </div>
             <div class="row two">
@@ -392,9 +411,12 @@
             <option>Afdekplaatje</option>
             <option>Flashcards</option>
             <option>Braindump en controle</option>
-            <option>Design exam questions</option>
-            <option>Answer exam questions</option>
+            <option>Cornell-methode</option>
+            <option>Ontwerp toetsvragen</option>
+            <option>Los toetsvragen op</option>
             <option>Uitleggen aan iemand</option>
+            <option>Extra oefeningen maken</option>
+            <option>Andere strategie</option>
           </select>
         </div>
 
@@ -411,20 +433,32 @@
           </select>
         </div>
 
-        <div class="row two">
-          <div>
-            <label for="blockStart">Starttijd</label>
-            <input id="blockStart" type="time" step="300" value="16:00" required>
-          </div>
-          <div>
-            <label for="blockDur">Duur (min)</label>
-            <input id="blockDur" type="number" min="15" step="5" value="25" required>
-          </div>
-        </div>
+<div class="row two">
+  <div>
+    <label for="blockStart">Starttijd</label>
+    <input
+      id="blockStart"
+      type="time"
+      step="300"                 <!-- 300s = 5 min -->
+      min="07:00"                <!-- eerste geldige tick -->
+      max="23:55"                <!-- laatste geldige tick -->
+      value="16:00"
+      required
+      inputmode="numeric"
+      pattern="^([01]\\d|2[0-3]):([0-5][05])$"  <!-- :00,:05,...,:55 -->
+      title="Gebruik stappen van 5 minuten (bv. 16:00, 16:05, …)"
+    >
+  </div>
+  <div>
+    <label for="blockDur">Duur (min)</label>
+    <input id="blockDur" type="number" min="15" step="5" value="25" required>
+  </div>
+</div>
+
 
         <div id="rowNote" class="row">
-          <label for="blockNote">Notitie (optioneel)</label>
-          <input id="blockNote" type="text" placeholder="Extra: paginanummers, bron …">
+          <label for="blockNote">Extra informatie</label>
+          <input id="blockNote" type="text" placeholder="Waar vind ik de leerstof? Smartschool, Bingle, map wiskunde …">
         </div>
       </form>
 
@@ -473,7 +507,7 @@
     </div>
   </div>
 
-  <!-- Rule Warning Modal -->
+  
   <div id="ruleModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="ruleModalTitle" hidden>
     <div class="modal-box">
       <div class="modal-head">
@@ -491,7 +525,7 @@
     </div>
   </div>
 
-  <!-- Theory Modal -->
+  
   <div id="theoryModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="theoryTitle" hidden>
     <div class="modal-box">
       <div class="modal-head">
@@ -512,7 +546,7 @@
     </div>
   </div>
 
-  <!-- Help Modal -->
+  
   <div id="helpModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle" hidden>
     <div class="modal-box">
       <div class="modal-head">
@@ -520,16 +554,18 @@
         <button type="button" class="modal-close" data-close>&times;</button>
       </div>
       <div class="modal-body">
-        <p>Gebruik de <strong>Planner</strong> om per week blokken te plannen. Hou rekening met <em>interleaving</em>, <em>spaced practice</em> en <em>korte pauzes</em>.</p>
+        <p>Gebruik de <strong>Planner</strong> om per week studieblokken te plannen. </br>
+        Hou rekening met <em>interleaving</em>, <em>spaced practice</em> en <em>korte pauzes</em>.</br>
+        Gebruik ook volgende studietips:</p>
         <ul class="tips" id="tipsList">
-          <li><strong>Korte pauze timen:</strong> gebruik een kookwekker (5–10 min), niet Netflix.</li>
-          <li><strong>Varieer je pauzes:</strong> even wandelen, water halen, tekenen; vermijd schermen.</li>
-          <li><strong>Vergeten helpt leren:</strong> even laten ‘zakken’ maakt ophalen inspannend en effectief.</li>
-          <li><strong>Braindump:</strong> schrijf 2 min alles neer wat je nog weet zonder te spieken.</li>
+          <li><strong>Korte pauze(s):</strong> gebruik een kookwekker om jouw pauzes te timen (5–10 min). Een volledige Netflix-aflevering kijken vergt teveel tijd.</li>
+          <li><strong>Varieer je pauzes:</strong> even wandelen, water halen, tekenen ... vermijd telkens te grijpen naar beeldschermen.</li>
+          <li><strong>Vergeten helpt leren:</strong> leerstof even laten ‘bezinken’ maakt de kennis opnieuw ophalen een inspanning en net daardoor effectief.</li>
+          <li><strong>Braindump:</strong> schrijf in 2 min alles neer wat je nog weet zonder te spieken.</li>
           <li><strong>Flashcards:</strong> korte vraag-antwoord met zelftoetsing.</li>
-          <li><strong>Challenge grid:</strong> oude leerstof = meer punten → kies slim wat je oefent.</li>
-          <li><strong>Uitleggen:</strong> leg de leerstof aan iemand anders uit (of aan jezelf).</li>
-          <li><strong>Niet enkel lezen/overschrijven:</strong> actief oefenen werkt beter.</li>
+          <li><strong>Challenge grid:</strong> Leg de flash cards in een rooster. Vragen over "oudere leerstof" zijn meer punten waard. Probeer zo van herhalen een uitdagend spel te maken.</li>
+          <li><strong>Uitleggen:</strong> leg de leerstof aan iemand anders uit (of aan jezelf). Hardop leren helpt!</li>
+          <li><strong>Niet enkel lezen/overschrijven:</strong> kopiëren kost weinig moeite en is dus ook niet de moeite waard. Actief oefenen werkt beter.</li>
         </ul>
         <div id="tipsDots" class="tips-dots" aria-label="Tips navigatie"></div>
       </div>
@@ -583,6 +619,30 @@
       return d;
     }
     function parseTimeToMinutes(hhmm) { const [h,m] = hhmm.split(':').map(Number); return h*60 + (m||0); }
+    function clamp(n, lo, hi){ return Math.min(Math.max(n, lo), hi); }
+    function snapToStep(minutes, step=5){ return Math.round(minutes/step)*step; }
+
+// (NL) Zorgt dat #blockStart altijd netjes "snapt" op 5 minuten en binnen bereik valt
+function applyTimeStepConstraints() {
+  const input = document.getElementById('blockStart');
+  if (!input) return;
+
+  // Align met UI venster (07:00–24:00 → laatste tick 23:55)
+  input.step = 300;
+  input.min  = '07:00';
+  const maxMinutes = 24*60 - 5; // 23:55
+  input.max  = minutesToHHMM(maxMinutes);
+
+  const snapAndFix = () => {
+    const raw = input.value || input.min || '07:00';
+    let m = parseTimeToMinutes(raw);
+    m = clamp(snapToStep(m, 5), 7*60, maxMinutes);
+    input.value = minutesToHHMM(m);
+  };
+
+  input.addEventListener('change', snapAndFix);
+  input.addEventListener('blur',   snapAndFix);
+}
     function minutesToHHMM(min) {
       const h = Math.floor(min/60), m = min%60;
       return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
@@ -908,7 +968,7 @@ function makeYToMinutes(cumulativeTop, hourScale) {
     function renderWeekGrid() {
   weekGrid.innerHTML = "";
 
-  // Header
+
   const head = document.createElement('div');
   head.className = 'row header';
   const hours = document.createElement('div');
@@ -924,19 +984,18 @@ function makeYToMinutes(cumulativeTop, hourScale) {
   });
   weekGrid.appendChild(head);
 
-  // Body
+
   const body = document.createElement('div');
   body.className = 'body';
 
   const blocks = getBlocks();
 
-  // NEW: dynamic hour scaling
+
   const hourScale = computeHourPxPerMin(blocks); // {hour -> px/min}
   const { hourHeights, cumulativeTop, totalHeight } = buildHourMetrics(hourScale);
   const minuteToY  = makeMinuteToY(cumulativeTop, hourScale);
   const yToMinutes = makeYToMinutes(cumulativeTop, hourScale);
 
-  // Hours rail (left)
   const hr = document.createElement('div');
   hr.className = 'hours-col';
   hr.style.height = totalHeight + 'px';
@@ -949,14 +1008,13 @@ function makeYToMinutes(cumulativeTop, hourScale) {
   }
   body.appendChild(hr);
 
-  // Per-day columns
+
   [1,2,3,4,5,6,0].forEach(day => {
     const col = document.createElement('div');
     col.className = 'day-col';
     col.style.height = totalHeight + 'px';
     col.dataset.day = String(day);
 
-    // Hour lines at boundaries
     for (let h = START_HOUR; h < END_HOUR; h++) {
       const line = document.createElement('div');
       line.className = 'hour-line';
@@ -964,13 +1022,17 @@ function makeYToMinutes(cumulativeTop, hourScale) {
       col.appendChild(line);
     }
 
-    // Click-to-plan using dynamic scale
     col.addEventListener('click', (e) => {
-      if (e.target !== col) return; // ignore clicks on existing blocks
+      if (e.target.closest('.study-block')) return;
+
       const rect = col.getBoundingClientRect();
       const y = e.clientY - rect.top;
-      const startMin = yToMinutes(y); // 0..1440
-      // Open with a sensible default subject and duration
+      const snap5 = (m) => Math.round(m / 5) * 5;
+
+      let startMin = yToMinutes(y);                 // minute-of-day
+      startMin = snap5(startMin);                   // snap to 5-min grid
+      startMin = Math.max(START_MIN, Math.min(END_MIN - 5, startMin)); // clamp
+
       openBlockModal({
         subjectId: subjects[0]?.id || '',
         day,
@@ -980,7 +1042,6 @@ function makeYToMinutes(cumulativeTop, hourScale) {
       });
     });
 
-    // Render blocks for this day
     blocks.filter(b => b.day === day).forEach(b => {
       const sub = subjects.find(s => s.id === b.subjectId);
 
@@ -1035,6 +1096,7 @@ function makeYToMinutes(cumulativeTop, hourScale) {
 
   weekGrid.appendChild(body);
 }
+
 
 
     weekStartInput.addEventListener('change', () => {
@@ -1278,7 +1340,8 @@ function makeYToMinutes(cumulativeTop, hourScale) {
 
       const sub       = qs('#blockSubject').value;
       const day       = Number(qs('#blockDay').value);
-      const startMin  = parseTimeToMinutes(qs('#blockStart').value);
+      let startMin = parseTimeToMinutes(qs('#blockStart').value);
+      startMin = clamp(snapToStep(startMin, 5), 7*60, 24*60 - 5);
       const duration  = Math.max(10, Number(qs('#blockDur').value || 25));
 
       const subjObj   = subjects.find(x => x.id === sub);
@@ -1483,7 +1546,7 @@ function makeYToMinutes(cumulativeTop, hourScale) {
     });
 
     // ===========================
-    // Export PDF — split by active tab (export fixes eerder behandeld)
+    // Export PDF
     // ===========================
     const exportBtn = qs('#exportBtn');
 
@@ -1492,13 +1555,13 @@ function makeYToMinutes(cumulativeTop, hourScale) {
       return canvas.toDataURL('image/png');
     }
 
-    // Load PNG as DataURL (no canvas => no taint)
+    // Load PNG as DataURL
     let _logoDataUrlPromise = null;
     function getLogoDataUrl() {
       if (_logoDataUrlPromise) return _logoDataUrlPromise;
       _logoDataUrlPromise = (async () => {
         try {
-          const res = await fetch('media/edup_academy.png', { cache: 'force-cache' });
+          const res = await fetch('media/edup_academy_wit.png', { cache: 'force-cache' });
           const blob = await res.blob();
           const fr = new FileReader();
           const dataUrl = await new Promise((resolve, reject) => {
@@ -1677,9 +1740,10 @@ function makeYToMinutes(cumulativeTop, hourScale) {
     // Init
     // ===========================
     renderSubjectsUI();
-    renderLegend();
-    renderWeekGrid();
-    if (seededNow) { renderSubjectsUI(); renderLegend(); fillSubjectSelect(); }
+renderLegend();
+renderWeekGrid();
+applyTimeStepConstraints();   // ← add this line here
+if (seededNow) { renderSubjectsUI(); renderLegend(); fillSubjectSelect(); }
 
 
 
@@ -1687,6 +1751,7 @@ function makeYToMinutes(cumulativeTop, hourScale) {
   </script>
 </body>
 </html>
+
 
 
 
