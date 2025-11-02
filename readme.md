@@ -30,7 +30,7 @@ Deze webapp helpt leerlingen (11–18 jaar) om:
 * Export: losse Planner-PDF en Reflectie-PDF met titelbalk (logo/naam optioneel).
 
 
-## 📋 Vereisten
+## Vereisten
 
 * Geen installatie nodig, draait volledig in de browser. (normaal gezien ook in een SEB-omgeving)
 * Aanbevolen browser: Google Chrome (of recente Edge/Chromium).
@@ -62,5 +62,6 @@ Deze webapp helpt leerlingen (11–18 jaar) om:
 Alle rechten voorbehouden.
 
 Niet herdistribueren of gebruiken zonder schriftelijke toestemming van de auteur.
+
 
 
