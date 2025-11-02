@@ -6,7 +6,7 @@
 Demo: [https://robbew.github.io/edup/](https://robbew.github.io/edup/) 
 
 
-# 🎯 Doel
+# Doel
 
 Deze webapp helpt leerlingen (11–18 jaar) om:
 
@@ -49,7 +49,7 @@ Deze webapp helpt leerlingen (11–18 jaar) om:
 * Reflectie exporteren: knop “Reflectie exporteren (PDF)” (reflect-paneel).
 
 
-## 🎓 Leerkrachtentips
+## Leerkrachtentips
 
 * Gebruik de waarschuwingen om klasgesprekken te starten over interleaving, spaced practice en pauzes.
 * Laat leerlingen reflectie-PDF indienen als wekelijkse check-in.
@@ -62,4 +62,5 @@ Deze webapp helpt leerlingen (11–18 jaar) om:
 Alle rechten voorbehouden.
 
 Niet herdistribueren of gebruiken zonder schriftelijke toestemming van de auteur.
+
 
